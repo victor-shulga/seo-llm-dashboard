@@ -66,7 +66,7 @@ CLI: python3 <AVR_SKILL_DIR>/scripts/avr.py <command> <DOMAIN>_config.json, run 
    Shortlist = among several or "yes, but verify"; Passing mention = named, not recommended, and every purely
    descriptive answer. Note what the models get wrong about the brand (old name, wrong role, no proof).
 4. `avr.py finalize` once (prose holds only previous), read sections in <DOMAIN>_ai_visibility_<slug>.json,
-   then write <DOMAIN>_prose.json per references/prose.schema.md in <REPORT_LANGUAGE>: summary.narrative +
+   then write <DOMAIN>_prose.json per the prose schema of the ai-visibility-report skill (`prose.schema.md` in its references folder) in <REPORT_LANGUAGE>: summary.narrative +
    insight (with the change vs last month), insights for by_llm, by_prompt, citation_landscape, competitors,
    and 3-4 opportunities.actions, each `why` citing a number from this run. Copy the search_volume block
    unchanged from <DOMAIN>_prose_<previous slug>.json. Compute the score per language (the `lang` field of the

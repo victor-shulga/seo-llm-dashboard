@@ -6,7 +6,7 @@ sitemap-wide index-coverage sweep. The numbers match OpenSEO's; the proxy just d
 
 Server: `scripts/gsc_mcp_server.py` (PEP 723 script, run by `uv`, read-only scope `webmasters.readonly`).
 Tools: `sites`, `performance`, `compare`, `inspect_url`, `sitemaps`, `index_coverage`.
-Same code works as a CLI: `uv run --script gsc_mcp_server.py --call compare '{"days":28}'`.
+Same code works as a CLI: `uv run --script <skill-dir>/scripts/gsc_mcp_server.py --call compare '{"days":28}'`.
 
 ## Setup (once per owner)
 
@@ -21,11 +21,11 @@ Same code works as a CLI: `uv run --script gsc_mcp_server.py --call compare '{"d
    Cloud project.
 4. **Data access is granted in Search Console, not IAM:** property -> Settings -> Users and permissions ->
    Add user -> the service account's `client_email` -> Full. Repeat per property (a client adds it to theirs).
-5. Copy the server somewhere stable (e.g. `~/tools/gsc-mcp/server.py`) and register in user scope:
+5. Register the bundled server in user scope (`<skill-dir>` = the folder this skill is installed in):
    ```bash
-   claude mcp add gsc --scope user --env GSC_DEFAULT_SITE=sc-domain:<domain> -- uv run --script ~/tools/gsc-mcp/server.py
+   claude mcp add gsc --scope user --env GSC_DEFAULT_SITE=sc-domain:<domain> -- uv run --script <skill-dir>/scripts/gsc_mcp_server.py
    ```
-6. Check: `uv run --script ~/tools/gsc-mcp/server.py --check` lists the properties it can see.
+6. Check: `uv run --script <skill-dir>/scripts/gsc_mcp_server.py --check` lists the properties it can see.
 
 ## Traps
 
