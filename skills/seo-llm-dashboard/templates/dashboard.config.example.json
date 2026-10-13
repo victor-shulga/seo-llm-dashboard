@@ -1,0 +1,33 @@
+{
+  "page": "dashboard.html",
+  "domain": "example.com",
+  "brand_name": "Example",
+  "title": "Пошук і LLM · Example",
+  "h1": "Пошук і LLM-видимість",
+  "tabs": [],
+  "openseo": {
+    "mcp_server": "open-seo",
+    "project_id": "<OpenSEO project id: mcp__open-seo__list_projects>",
+    "own_tracker_domain": "example.com",
+    "device": "mobile",
+    "rank_tracking": true
+  },
+  "rank_market_label": "Україна · мобільний · щотижня · топ-40",
+  "brand_query_regex": "example|екзампл",
+  "old_brand_regex": null,
+  "ai_mode_file": "seo_ai.json",
+  "geo": {
+    "run_dir": "../ai-visibility/runs/example.com-ua",
+    "notes_file": "seo_geo.json",
+    "audience": "власники українських IT-агенцій",
+    "country_note": "Країна пошуку Україна задана для ChatGPT і Perplexity; Claude її не приймає, Gemini не має такого параметра, тому для них країна названа в самому питанні."
+  },
+  "colors": {
+    "accent": "#E85A4F",
+    "accent_deep": "#C24235",
+    "accent_soft": "#FBEAE8",
+    "ink": "#161513",
+    "positive": "#2D5A4A",
+    "positive_soft": "#E8F0EC"
+  }
+}

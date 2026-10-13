@@ -1,0 +1,8 @@
+{
+  "forRun": "YYYY-MM-DD (= date_generated of the ai-visibility run these actions were written for)",
+  "note": "Rows for the «Що робити» table under AI Visibility Score. Rewritten by hand after every run; numbers come from the run itself.",
+  "actions": [
+    {"title": "Коротка дія наказовим способом", "what": "число з прогону, що її обґрунтовує: конкретні кроки через кому", "effort": "тиждень"},
+    {"title": "…", "what": "…", "effort": "2–6 тижнів"}
+  ]
+}

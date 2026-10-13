@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: OpenSEO self-host <noreply@example.com>
+Date: Mon, 24 Aug 2026 20:45:34 +0300
+Subject: [PATCH] Let Access service tokens reach the MCP endpoint
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+/mcp resolves its user through resolveCloudflareAccessContext, which requires
+a human `sub` and `email` from the Access JWT. A service token carries a
+machine identity (`common_name`) instead, so every MCP request died with a 500
+after Access had already authorized it — and an MCP client cannot complete the
+interactive Access login that would produce a human JWT.
+
+Treat a verified service-token JWT as the single self-hosted operator. Access
+has already checked it against the app's Service Auth policy before the worker
+sees it, and a self-hosted deployment has exactly one user, so binding the
+token to a second empty workspace would help nobody.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+---
+ .../ensure-user/cloudflareAccess.ts           | 29 +++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/src/middleware/ensure-user/cloudflareAccess.ts b/src/middleware/ensure-user/cloudflareAccess.ts
+index 54b7394..f19e36d 100644
+--- a/src/middleware/ensure-user/cloudflareAccess.ts
++++ b/src/middleware/ensure-user/cloudflareAccess.ts
+@@ -1,5 +1,6 @@
+ import { env } from "cloudflare:workers";
+ import { createRemoteJWKSet, jwtVerify } from "jose";
++import { db } from "@/db";
+ import { AppError } from "@/server/lib/errors";
+ import { resolveDelegatedContext } from "./delegated";
+ import type { EnsuredUserContext } from "./types";
+@@ -74,6 +75,16 @@ export async function resolveCloudflareAccessContext(
+     const userEmail = typeof payload.email === "string" ? payload.email : null;
+ 
+     if (!userId || !userEmail) {
++      // Access service tokens carry a machine identity (`common_name`) instead
++      // of a human `sub`/`email`, so the delegated lookup above cannot resolve
++      // them. Access has already verified the token against the app's Service
++      // Auth policy by the time we get here, so trust it and act as the single
++      // self-hosted operator — otherwise MCP clients, which cannot complete an
++      // interactive Access login, have no way in at all.
++      if (typeof payload.common_name === "string") {
++        return resolveServiceTokenContext();
++      }
++
+       throw new AppError("UNAUTHENTICATED");
+     }
+ 
+@@ -86,3 +97,21 @@ export async function resolveCloudflareAccessContext(
+     throw new AppError("UNAUTHENTICATED");
+   }
+ }
++
++// A self-hosted deployment has exactly one operator. Service tokens act as that
++// operator rather than creating a second, empty workspace nobody can reach.
++async function resolveServiceTokenContext(): Promise<EnsuredUserContext> {
++  const owner = await db.query.user.findFirst({
++    columns: { id: true, email: true },
++    orderBy: (u, { asc }) => [asc(u.createdAt)],
++  });
++
++  if (!owner) {
++    throw new AppError(
++      "UNAUTHENTICATED",
++      "No user exists yet; sign in through Cloudflare Access once before using a service token.",
++    );
++  }
++
++  return resolveDelegatedContext(owner.id, owner.email);
++}
+-- 
+2.50.1 (Apple Git-155)
+

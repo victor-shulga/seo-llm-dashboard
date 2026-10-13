@@ -1,0 +1,690 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Пошук і LLM · демо</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+:root{
+  --paper:#FFFFFF;--card:#F7F5F1;--line:#E8E6E1;--line2:#D9D6D0;
+  --ink:#161513;--body:#3D3D3A;--muted:#6C6A64;
+  --coral:#E85A4F;--coral-deep:#C24235;--coral-soft:#FBEAE8;
+  --forest:#2D5A4A;--forest-soft:#E8F0EC;--neutral:#C9C6BF;
+  --display:"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --text:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+/*__BRAND__*//*__/BRAND__*/
+*{box-sizing:border-box}
+/* атрибут hidden мусить перемагати display:grid/flex у .split, .mini і секціях */
+[hidden]{display:none!important}
+body{margin:0;background:var(--paper);color:var(--body);font-family:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:26px 20px 48px;display:flex;flex-direction:column;gap:22px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,3.4vw,34px);line-height:1.06;letter-spacing:-.02em;color:var(--ink);margin:0 0 8px;text-wrap:balance}
+h2{font-family:var(--display);font-weight:700;font-size:18px;line-height:1.2;letter-spacing:-.012em;color:var(--ink);margin:0}
+.lede{font-size:14.5px;max-width:78ch;margin:0}
+section{display:flex;flex-direction:column;gap:11px}
+.sec-head{display:flex;flex-direction:column;gap:3px}
+.sec-head .sub{color:var(--muted);font-size:13.5px}
+hr{height:1px;background:var(--line);border:0;margin:0}
+
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:4px;position:sticky;top:0;z-index:5}
+.grp{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.grp .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:2px}
+button.chip{font-family:var(--text);font-size:13px;padding:5px 11px;border:1px solid var(--line2);background:var(--paper);color:var(--body);border-radius:3px;cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+button.chip:hover{border-color:var(--muted)}
+button.chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+button.chip:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+.spacer{flex:1 1 auto;min-width:8px}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 14px}
+.kpi .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--display);font-weight:800;font-size:26px;line-height:1.05;color:var(--ink);margin:5px 0 2px;font-variant-numeric:tabular-nums}
+.kpi .d{font-size:12.5px;color:var(--muted)}
+.kpi .v.c{color:var(--coral-deep)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px}
+.cuts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;align-items:start}
+.cut{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:16px}
+.cut h3{margin:0 0 2px}
+.cut .hint{font-size:12px;color:var(--muted);margin:0 0 12px;max-width:none}
+.scroll{overflow-x:auto}
+figcaption,.note{font-size:13px;color:var(--muted);margin-top:12px;max-width:74ch}
+svg{display:block}
+.lg{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12.5px;color:var(--muted)}
+.lg span{display:flex;align-items:center;gap:6px}
+.sw{width:10px;height:10px;border-radius:2px;flex:none}
+
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 10px 6px 0;border-bottom:1px solid var(--line)}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:500;white-space:nowrap}
+th.s{cursor:pointer;user-select:none}
+th.s:hover{color:var(--ink)}
+td.n,th.n{text-align:right;white-space:nowrap}
+tbody tr:hover{background:#EFEDE8}
+td a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--line2)}
+td a:hover{border-bottom-color:var(--coral);color:var(--coral-deep)}
+/* лідерборд енгейджерів: дві колонки карток. В один рядок на всю ширину
+   імʼя й цифри розʼїжджались на півекрана порожнечі. */
+.eng{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(400px,100%),1fr));column-gap:36px}
+.eng-row{display:grid;grid-template-columns:15px 44px minmax(0,1fr) auto;
+  column-gap:10px;row-gap:1px;padding:10px 2px;border-bottom:1px solid var(--line)}
+.eng-row:hover{background:var(--paper)}
+.eng-rank{grid-row:1/4;align-self:center;font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+.eng-ava{grid-row:1/4;align-self:center;width:44px;height:44px;border-radius:50%;object-fit:cover;
+  background:var(--line);box-shadow:0 0 0 2px var(--paper),0 0 0 2px var(--line2)}
+.eng-row.hot .eng-ava{box-shadow:0 0 0 2px var(--paper),0 0 0 2px var(--coral)}
+.eng-name{grid-area:1/3;font-weight:600;font-size:13.5px;color:var(--ink);text-decoration:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eng-name:hover{color:var(--coral-deep)}
+.eng-score{grid-area:1/4;justify-self:end;font-family:var(--mono);font-size:12.5px;font-weight:600;
+  color:var(--coral-deep);background:var(--coral-soft);padding:2px 7px;border-radius:3px}
+.eng-head{grid-area:2/3;color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eng-tag{grid-area:2/4;justify-self:end;align-self:center}
+.eng-meta{grid-area:3/3/3/5;font-family:var(--mono);font-size:10.5px;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:2px}
+.eng-meta b{font-weight:600;color:var(--body)}
+.eng-new{background:var(--coral-soft);color:var(--coral-deep)}
+.eng-client{background:var(--forest-soft);color:var(--forest)}
+@media(max-width:640px){.eng-row{padding:9px 0}}
+.pill{display:inline-block;font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;padding:2px 6px;border-radius:3px;background:#EFEDE8;color:var(--muted);white-space:nowrap}
+.pill.lm{background:var(--coral-soft);color:var(--coral-deep)}
+.pill.kr{background:var(--forest-soft);color:var(--forest)}
+.pill.inf{background:#F2E6D9;color:#8A5A2B}
+
+.callout{border-left:3px solid var(--coral);background:var(--coral-soft);padding:13px 16px;border-radius:0 4px 4px 0;font-size:13.5px}
+.callout.f{border-left-color:var(--forest);background:var(--forest-soft)}
+.callout p{margin:0 0 10px;max-width:66ch}
+.callout p:last-child{margin-bottom:0}
+.callout strong{color:var(--ink)}
+footer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:18px}
+footer code{font-family:var(--mono);font-size:11.5px;color:var(--body)}
+.empty{padding:26px;text-align:center;color:var(--muted);font-size:14px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* вкладки між сусідніми репортами на тому ж хості (config: tabs) */
+.tabs{display:flex;gap:6px;margin:0 0 18px}
+.tabs a{font-family:var(--text);font-size:13.5px;padding:7px 14px;border:1px solid var(--line);
+  border-radius:4px;text-decoration:none;color:var(--body);background:var(--paper)}
+.tabs a[aria-current="page"]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
+.kpi .row{display:flex;align-items:center;gap:8px;margin-top:7px;font-size:12px}
+.kpi .row .lbl{color:var(--muted);min-width:52px}
+.kpi .row .num{font-family:var(--mono);font-size:11.5px;color:var(--body);margin-left:auto}
+.flag{font-family:var(--mono);font-size:11px;padding:1px 6px;border-radius:3px;white-space:nowrap}
+.flag.up{background:var(--forest-soft);color:var(--forest)}
+.flag.down{background:var(--coral-soft);color:var(--coral-deep)}
+.flag.flat{background:#EFEDE8;color:var(--muted)}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+.dot.on{background:var(--forest)}
+.dot.off{background:var(--neutral)}
+.dot.ok{background:var(--forest)}
+.dot.warn{background:#C98A3E}
+.dot.risk{background:var(--coral)}
+/* рівно 2×2: при 4 в ряд колонка ~280px, і довгий підпис («Реферальні виплати»)
+   зʼїдає весь бар */
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.split{grid-template-columns:1fr}}
+.mini{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px 16px}
+.mini h3{font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink);margin:0 0 10px}
+/* лідерборд «кого рекомендують»: рядок = місце · імʼя · смуга · у скількох відповідях */
+.lb{display:flex;flex-direction:column;gap:7px}
+.lb-row{display:grid;grid-template-columns:22px minmax(0,1fr) 38%;align-items:center;gap:10px;font-size:13px}
+.lb-row .r{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+.lb-row .nm{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-row .nm small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
+.lb-row .bar{position:relative;height:18px;background:#EFEDE8;border-radius:2px}
+.lb-row .bar i{position:absolute;inset:0 auto 0 0;background:#B9B6AE;border-radius:2px}
+.lb-row .bar b{position:absolute;right:6px;top:0;line-height:18px;font:600 10.5px var(--mono);color:var(--ink)}
+.lb-row.me .nm{color:var(--coral-deep);font-weight:600}
+.lb-row.me .bar i{background:var(--coral)}
+.lb-meta{font-size:11.5px;color:var(--muted);margin-top:10px}
+#citeBox{margin-top:10px}
+/* AI Visibility Score: чотири картки-кільця (разом + по мові питання) */
+.geo-langs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.geo-langs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.geo-langs{grid-template-columns:minmax(0,1fr)}}
+.geo-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:6px}
+#geoTrendBox{margin:10px 0}
+.geo-card.all{border-color:var(--line2);background:var(--paper)}
+.geo-card .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);align-self:flex-start}
+.geo-card .facts{width:100%}
+.geo-card .row{display:flex;gap:8px;padding:4px 0;border-top:1px solid var(--line);font-size:12px}
+.geo-card .row .lbl{color:var(--muted)}
+.geo-card .row .num{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink);white-space:nowrap}
+.geo-card .row .num.f{color:var(--forest);font-weight:600}
+.geo-card .row .num.c{color:var(--coral-deep);font-weight:600}
+td.z{color:var(--neutral)}
+</style>
+<style id="mobile-guard">
+  .kpis>*,.grid2>*,.grid3>*,.split>*,.panel,.kpi,.card{min-width:0}
+  .panel svg,.panel canvas,.panel img,.card svg,.card canvas,.card img{max-width:100%}
+  .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  @media (max-width:1024px){
+    .panel table,.card table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+  }
+  @media (max-width:760px){
+    .grid2,.grid3,.split{grid-template-columns:minmax(0,1fr)!important}
+    .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+    .filters{flex-wrap:wrap}
+    .filters select,.filt select{min-width:0;max-width:100%}
+  }
+  @media (max-width:480px){
+    .kpis{grid-template-columns:minmax(0,1fr)!important}
+    .kpis>*{grid-column:auto!important}
+  }
+</style>
+<div class="wrap">
+<nav class="tabs" aria-label="Репорти" hidden></nav>
+
+<header>
+  <p class="eyebrow">Example Agency · example.com · дані з 2026-05-18 · 94 кліків за 28 днів · оновлено 2026-09-08</p>
+  <h1>Пошук і LLM-видимість</h1>
+</header>
+
+<section>
+  <div class="kpis" id="kpis"></div>
+</section>
+
+<hr>
+
+<section>
+  <div class="sec-head">
+    <h2>Пошук по тижнях</h2>
+    <div class="sub" id="chartSub"></div>
+  </div>
+  <div class="grp">
+    <button class="chip" data-mode="imp" aria-pressed="true">Покази</button>
+    <button class="chip" data-mode="clicks" aria-pressed="false">Кліки</button>
+  </div>
+  <figure class="panel scroll" style="margin:0"><div id="chart"></div></figure>
+  <p class="note" id="chartNote"></p>
+</section>
+
+<hr>
+
+<section>
+  <div class="sec-head">
+    <h2>Що шукають</h2>
+    <div class="sub" id="qSub"></div>
+  </div>
+  <div class="split">
+    <div class="mini"><h3>Запити</h3><div class="scroll"><table id="queries"></table></div></div>
+    <div class="mini"><h3>Сторінки</h3><div class="scroll"><table id="pages"></table></div></div>
+  </div>
+  <p class="note" id="qNote"></p>
+</section>
+
+<hr>
+
+<section>
+  <div class="sec-head">
+    <h2>Позиції по ключах</h2>
+    <div class="sub" id="rankSub"></div>
+  </div>
+  <div class="panel scroll"><table id="ranks"></table></div>
+  <p class="note" id="rankNote"></p>
+</section>
+
+<hr>
+
+<section id="aiSec" hidden>
+  <div class="sec-head">
+    <h2>Трафік з AI-режиму Google</h2>
+    <div class="sub" id="aiSub"></div>
+  </div>
+  <div class="kpis" id="aiKpis"></div>
+  <figure class="panel scroll" style="margin:4px 0 0"><div id="aiChart"></div></figure>
+  <div class="split" style="margin-top:10px">
+    <div class="mini"><h3>Сторінки</h3><div class="scroll"><table id="aiPages"></table></div></div>
+    <div class="mini"><h3>Країни й пристрої</h3><div class="scroll"><table id="aiWhere"></table></div></div>
+  </div>
+</section>
+
+<hr>
+
+<section id="geoSec" hidden>
+  <div class="sec-head">
+    <h2>AI Visibility Score</h2>
+    <div class="sub" id="geoSub"></div>
+  </div>
+  <div class="geo-langs" id="geoLangs"></div>
+  <div class="mini" id="geoTrendBox"><h3>Бал від заміру до заміру</h3><div class="grp" style="margin:0 0 8px"><button class="chip" data-trend="rivals" aria-pressed="true">Конкуренти</button><button class="chip" data-trend="lang" aria-pressed="false">По мовах</button></div><div class="scroll"><div id="geoTrend"></div></div><p class="note" id="geoTrendNote"></p></div>
+  <div class="split">
+    <div class="mini"><h3>Бал проти конкурентів</h3><div id="geoRivals"></div></div>
+    <div class="mini"><h3>По моделях</h3><div class="scroll"><table id="geoModels"></table></div></div>
+  </div>
+  <div class="split">
+    <div class="mini"><h3>Кого цитують як джерело</h3><div id="geoSources"></div></div>
+    <div class="mini"><h3>Що робити</h3><div class="scroll"><table id="geoActions"></table></div></div>
+  </div>
+  <p class="note" id="geoNote"></p>
+</section>
+
+<footer>Джерела: Search Console і rank tracking — self-hosted OpenSEO · AI-режим Google — ручний експорт звіту «Функції на основі генеративного ШІ» (API його не віддає) · AI Visibility Score — прогін ai-visibility-report (DataForSEO, живі відповіді моделей) · оновлено 2026-09-08</footer>
+</div>
+
+<script>
+const SEO = {"meta": {"brandQueryRegex": "example agency", "oldBrandRegex": null, "audience": "власники українських IT-агенцій", "geoCountryNote": "Демо-дані: бренд, домени й цифри вигадані.", "domain": "example.com", "brand": "Example Agency"}, "gsc": {"since": "2026-05-18", "until": "2026-09-06", "weeks": {"2026-W21": [6, 58], "2026-W22": [6, 69], "2026-W23": [6, 68], "2026-W24": [5, 78], "2026-W25": [8, 85], "2026-W26": [5, 99], "2026-W27": [8, 115], "2026-W28": [6, 118], "2026-W29": [7, 133], "2026-W30": [8, 147], "2026-W31": [12, 145], "2026-W32": [17, 165], "2026-W33": [14, 174], "2026-W34": [18, 166], "2026-W35": [14, 175], "2026-W36": [12, 187]}, "last28": {"clicks": 94, "imp": 1210, "ctr": 7.8, "pos": 9.4, "days": 28}, "prev28": {"clicks": 71, "imp": 940, "ctr": 7.6, "pos": 10.8, "days": 28}, "queries": [["example agency", 38, 120, 31.7, 1.4], ["fractional cro україна", 6, 210, 2.9, 8.9], ["побудова відділу продажів it", 4, 180, 2.2, 11.2], ["аутбаунд для it компанії", 3, 150, 2.0, 12.8], ["gtm стратегія для агенції", 2, 95, 2.1, 9.6], ["example agency відгуки", 5, 22, 22.7, 2.1], ["лідогенерація b2b it", 1, 140, 0.7, 17.4], ["head of sales чи fractional cro", 2, 64, 3.1, 7.3], ["консалтинг з продажів", 0, 88, 0.0, 21.5], ["як найняти sdr", 1, 40, 2.5, 14.0]], "pages": [["https://example.com/", 52, 410, 12.7, 4.1], ["https://example.com/services/fractional-cro", 11, 260, 4.2, 8.3], ["https://example.com/blog/sales-team-from-scratch", 7, 330, 2.1, 10.9], ["https://example.com/cases", 5, 120, 4.2, 6.6], ["https://example.com/en/", 3, 95, 3.2, 7.8], ["https://example.com/blog/outbound-it", 2, 140, 1.4, 13.2], ["https://example.com/tools/icp-builder", 2, 48, 4.2, 5.5], ["https://example.com/pricing", 1, 31, 3.2, 9.0]], "queries3m": [["example agency", 38, 120, 31.7, 1.4], ["fractional cro україна", 6, 210, 2.9, 8.9], ["побудова відділу продажів it", 4, 180, 2.2, 11.2], ["аутбаунд для it компанії", 3, 150, 2.0, 12.8], ["gtm стратегія для агенції", 2, 95, 2.1, 9.6], ["example agency відгуки", 5, 22, 22.7, 2.1], ["лідогенерація b2b it", 1, 140, 0.7, 17.4], ["head of sales чи fractional cro", 2, 64, 3.1, 7.3], ["консалтинг з продажів", 0, 88, 0.0, 21.5], ["як найняти sdr", 1, 40, 2.5, 14.0], ["sales playbook шаблон", 1, 33, 3.0, 9.9], ["icp для it агенції", 1, 27, 3.7, 6.2]], "countries": [["ukr", 61, 780], ["pol", 11, 140], ["usa", 8, 170], ["deu", 5, 60], ["gbr", 4, 55]]}, "ai": {"measuredAt": "2026-09-10", "since": "2026-07-01", "until": "2026-09-06", "label": "3 місяці", "total": {"clicks": null, "imp": 63, "ctr": null, "pos": null}, "days": [["2026-07-01", null, 0], ["2026-07-02", null, 1], ["2026-07-03", null, 0], ["2026-07-04", null, 1], ["2026-07-05", null, 0], ["2026-07-06", null, 1], ["2026-07-07", null, 3], ["2026-07-08", null, 2], ["2026-07-09", null, 0], ["2026-07-10", null, 0], ["2026-07-11", null, 1], ["2026-07-12", null, 1], ["2026-07-13", null, 2], ["2026-07-14", null, 0], ["2026-07-15", null, 0], ["2026-07-16", null, 0], ["2026-07-17", null, 1], ["2026-07-18", null, 2], ["2026-07-19", null, 0], ["2026-07-20", null, 1], ["2026-07-21", null, 0], ["2026-07-22", null, 1], ["2026-07-23", null, 0], ["2026-07-24", null, 1], ["2026-07-25", null, 2], ["2026-07-26", null, 1], ["2026-07-27", null, 1], ["2026-07-28", null, 3], ["2026-07-29", null, 0], ["2026-07-30", null, 1], ["2026-07-31", null, 1], ["2026-08-01", null, 1], ["2026-08-02", null, 0], ["2026-08-03", null, 0], ["2026-08-04", null, 0], ["2026-08-05", null, 3], ["2026-08-06", null, 0], ["2026-08-07", null, 2], ["2026-08-08", null, 3], ["2026-08-09", null, 0], ["2026-08-10", null, 0], ["2026-08-11", null, 1], ["2026-08-12", null, 0], ["2026-08-13", null, 1], ["2026-08-14", null, 1], ["2026-08-15", null, 0], ["2026-08-16", null, 2], ["2026-08-17", null, 1], ["2026-08-18", null, 0], ["2026-08-19", null, 1], ["2026-08-20", null, 0], ["2026-08-21", null, 0], ["2026-08-22", null, 1], ["2026-08-23", null, 1], ["2026-08-24", null, 0], ["2026-08-25", null, 3], ["2026-08-26", null, 0], ["2026-08-27", null, 0], ["2026-08-28", null, 1], ["2026-08-29", null, 1], ["2026-08-30", null, 0], ["2026-08-31", null, 2], ["2026-09-01", null, 0], ["2026-09-02", null, 3], ["2026-09-03", null, 1], ["2026-09-04", null, 1], ["2026-09-05", null, 3], ["2026-09-06", null, 3]], "pages": [["https://example.com/", null, 21], ["https://example.com/blog/sales-team-from-scratch", null, 14], ["https://example.com/services/fractional-cro", null, 9]], "countries": [["Україна", null, 31], ["Польща", null, 8]], "devices": [["Мобільний", null, 27], ["Комп'ютер", null, 12]], "web": {"clicks": 0, "imp": 1525, "days": 68}, "share": 4.0}, "ranks": {"checkedAt": "2026-09-07", "nextAt": "2026-09-14", "market": "Україна · мобільний · щотижня · топ-40", "competitors": ["competitor-a.example", "competitor-b.example", "competitor-c.example"], "rows": [["example agency", 1, 1, "example.com", false, null, [null, null, null]], ["fractional cro україна", 6, 9, "example.com/services/fractional-cro", true, null, [2, 5, null]], ["gtm стратегія для агенції", 8, 8, "example.com/blog/gtm", true, null, [4, null, 12]], ["побудова відділу продажів it", 11, 15, "example.com/blog/sales-team-from-scratch", true, null, [3, 1, null]], ["аутбаунд для it компанії", 13, 12, "example.com/blog/outbound-it", true, null, [1, 6, 4]], ["head of sales чи fractional cro", 7, null, "example.com/blog/cro-vs-hos", true, null, [null, 3, null]], ["лідогенерація b2b it", null, null, "", true, null, [2, 8, 1]], ["консалтинг з продажів", null, null, "", true, null, [5, 1, null]], ["як найняти sdr", 14, 18, "example.com/blog/sdr", false, null, [9, null, 3]], ["icp для it агенції", 5, 6, "example.com/tools/icp-builder", true, null, [null, 7, null]]], "aioShare": 80, "top10": 5}, "geo": {"measuredAt": "2026-09-01", "prompts": 27, "models": 4, "answers": 108, "failed": 0, "total": {"score": 12.7, "hit": 13, "cited": 11, "of": 96}, "byLang": {"uk": {"score": 17.5, "hit": 6, "cited": 5, "of": 32}, "ru": {"score": 8.1, "hit": 3, "cited": 2, "of": 32}, "en": {"score": 12.5, "hit": 4, "cited": 4, "of": 32}}, "langs": ["uk", "ru", "en"], "prev": {"slug": "2026-08", "total": {"score": 8.5, "hit": 9, "cited": 7, "of": 96}, "byLang": {"uk": {"score": 11.2, "hit": 4, "cited": 3, "of": 32}, "ru": {"score": 8.1, "hit": 3, "cited": 2, "of": 32}, "en": {"score": 6.2, "hit": 2, "cited": 2, "of": 32}}}, "branded": {"hit": 11, "of": 12}, "rivals": [{"name": "Competitor A", "me": false, "score": 16.9, "hit": 21, "cited": 9, "of": 96, "lang": {"uk": 8, "ru": 7, "en": 6}}, {"name": "Competitor B", "me": false, "score": 14.4, "hit": 15, "cited": 12, "of": 96, "lang": {"uk": 5, "ru": 5, "en": 5}}, {"name": "Ви", "me": true, "score": 12.7, "hit": 13, "cited": 11, "of": 96, "lang": {"uk": 6, "ru": 3, "en": 4}}, {"name": "Competitor C", "me": false, "score": 5.6, "hit": 7, "cited": 3, "of": 96, "lang": {"uk": 2, "ru": 2, "en": 3}}], "byModel": [{"model": "ChatGPT", "version": "gpt-5.6", "lang": {"uk": [4, 8], "ru": [2, 8], "en": [3, 8]}, "branded": [3, 3], "cites": 7}, {"model": "Gemini", "version": "gemini-3.1-pro", "lang": {"uk": [1, 8], "ru": [0, 8], "en": [0, 8]}, "branded": [3, 3], "cites": 1}, {"model": "Claude", "version": "claude-opus-5", "lang": {"uk": [0, 8], "ru": [0, 8], "en": [0, 8]}, "branded": [2, 3], "cites": 0}, {"model": "Perplexity", "version": "sonar-pro", "lang": {"uk": [1, 8], "ru": [1, 8], "en": [1, 8]}, "branded": [3, 3], "cites": 3}], "sources": [["social.example.net", 24, false], ["reviews.example.org", 17, false], ["example.com", 14, true], ["community.example.net", 11, false], ["competitor-a.example", 9, false], ["listings.example.org", 8, false], ["competitor-b.example", 7, false], ["blog.example.net", 5, false]], "notesFor": "2026-09-01", "actions": [{"title": "Прибрати стару назву компанії з профілів", "what": "4 відповіді з 108 досі називають стару назву: профілі в соцмережах, біо на конференціях, каталоги", "effort": "тиждень"}, {"title": "Зайти в теми аутбаунду й відділу продажів", "what": "там бренд у 3 відповідях з 72, тоді як у темі фракційного CRO в 10 з 24: сторінки під ці питання трьома мовами", "effort": "2-6 тижнів"}, {"title": "Профіль у каталозі агенцій і стаття на галузевому порталі", "what": "reviews.example.org у 17 відповідях, community.example.net в 11, бренду там немає", "effort": "2-6 тижнів"}]}, "builtAt": "2026-09-08"};
+
+const fmtNum = n => Math.round(n).toLocaleString("uk-UA").replace(/,/g," ");
+const CSSV = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const COR = CSSV("--coral") || "#E85A4F", PAST = "#C9C6BF";
+const INK = CSSV("--ink") || "#161513", COR_DEEP = CSSV("--coral-deep") || "#C24235";
+const META = SEO.meta || {};
+const esc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const ORIGIN_RX = new RegExp("^https?://(www\\.)?" + esc(META.domain || ""), "i");
+let mode = "imp";
+
+function delta(now, was){
+  if (!was) return ["flat", "—"];
+  const d = Math.round((now-was)/was*1000)/10;
+  return [d > 0 ? "up" : d < 0 ? "down" : "flat", (d > 0 ? "+" : "") + d + "%"];
+}
+// позиція краща, коли МЕНША — тому для неї стрілка перевертається
+function posDelta(now, was){
+  if (!was) return ["flat", "—"];
+  const d = Math.round((now-was)*10)/10;
+  return [d < 0 ? "up" : d > 0 ? "down" : "flat", (d > 0 ? "+" : "") + d];
+}
+function row(label, value, cls, flag){
+  return `<div class="row"><span class="lbl">${label}</span>`
+       + (flag ? `<span class="flag ${cls}">${flag}</span>` : "")
+       + `<span class="num">${value}</span></div>`;
+}
+
+function renderKpis(){
+  const g = SEO.gsc, r = SEO.ranks || {top10: 0, rows: [], aioShare: 0, checkedAt: null};
+  const cur = g.last28, prev = g.prev28 || {clicks:0, imp:0, ctr:0, pos:0};
+  const [cCls, cTxt] = delta(cur.clicks, prev.clicks);
+  const [iCls, iTxt] = delta(cur.imp, prev.imp);
+  const [pCls, pTxt] = posDelta(cur.pos, prev.pos);
+  const [ctrCls, ctrTxt] = delta(cur.ctr, prev.ctr);
+  const top = g.countries[0] || ["—", 0, 0];
+  const cards = [
+    {k:"Кліки 28 днів", v:fmtNum(cur.clicks), c:"c", rows:[
+      row("попередні 28", fmtNum(prev.clicks), cCls, cTxt),
+      row("CTR", cur.ctr + "%", ctrCls, ctrTxt),
+      row("гео", `${top[0].toUpperCase()} · ${top[1]} кліків з ${g.countries.length} країн`),
+    ]},
+    {k:"Покази 28 днів", v:fmtNum(cur.imp), rows:[
+      row("попередні 28", fmtNum(prev.imp), iCls, iTxt),
+      row("середня позиція", cur.pos, pCls, pTxt),
+      row("запитів", g.queries.length + " з показами"),
+    ]},
+    ...(!SEO.ranks ? [] : [{k:"Позиції", v:r.top10 + " у топ-10", rows:[
+      row("ключів у трекінгу", r.rows.length),
+      row("AI Overview", r.aioShare + "% видач"),
+      row("перевірено", r.checkedAt || "—"),
+    ]}]),
+    // LLM-картка з AI Visibility Score: бал разом + по мові питання
+    ...(SEO.geo ? [{k:"AI Visibility Score", v:Math.round(SEO.geo.total.score) + " зі 100",
+      c: SEO.geo.total.score < 20 ? "c" : "", rows:
+      SEO.geo.langs.map(l2 => { const s = SEO.geo.byLang[l2];
+        return row({uk:"українська", ru:"російська", en:"англійська"}[l2], `${s.hit} з ${s.of} відп.`, s.hit ? "up" : "down", Math.round(s.score) + ""); }),
+    }] : []),
+  ];
+  document.getElementById("kpis").innerHTML = cards.map(c =>
+    `<div class="kpi"><div class="k">${c.k}</div><div class="v ${c.c||""}">${c.v}</div>${c.rows.join("")}</div>`).join("");
+}
+
+// ---- тижневий бар-чарт: даних мало, тому крок тиждень, а не місяць
+function renderChart(){
+  const weeks = Object.entries(SEO.gsc.weeks).slice(-16);
+  const host = document.getElementById("chart");
+  if (!weeks.length) { host.innerHTML = '<div class="empty">немає даних</div>'; return; }
+  const idx = mode === "imp" ? 1 : 0;
+  const vals = weeks.map(([,v]) => v[idx]);
+  const W = Math.max(560, (host.parentElement?.clientWidth || 900) - 40);
+  const H = 260, L = 44, R = 12, T = 24, B = 54, iw = W-L-R, ih = H-T-B;
+  const rawMax = Math.max(...vals, 1);
+  const step10 = Math.pow(10, Math.floor(Math.log10(Math.max(rawMax/4, 1))));
+  const gridStep = [1,2,2.5,5,10].map(m => m*step10).find(v => rawMax/v <= 5) || step10*10;
+  const max = Math.ceil(rawMax/gridStep)*gridStep;
+  const y = v => T + ih - (v/max)*ih, step = iw/weeks.length, bw = Math.min(26, step-8);
+  let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"`
+        + ` aria-label="${mode === "imp" ? "покази" : "кліки"} по тижнях">`;
+  for (let t = 0; t <= max + 1e-9; t += gridStep)
+    g += `<line x1="${L}" y1="${y(t)}" x2="${W-R}" y2="${y(t)}" stroke="#E8E6E1"/>`
+       + `<text x="${L-8}" y="${y(t)+4}" text-anchor="end" font-family="ui-monospace,monospace"`
+       + ` font-size="10" fill="#6C6A64">${fmtNum(t)}</text>`;
+  weeks.forEach(([wk,v],i) => {
+    const val = v[idx], x = L + step*i + (step-bw)/2, h = Math.max(1, T+ih-y(val));
+    const open = i === weeks.length-1;   // поточний тиждень ще не закритий
+    // колір лише для головного: акцент — останній закритий тиждень, решта сірі,
+    // незакритий — світліший сірий, щоб не читався як падіння
+    const last = i === weeks.length-2;
+    const fill = open ? "#E8E6E1" : last ? COR : PAST;
+    g += `<rect x="${x}" y="${y(val)}" width="${bw}" height="${h}" rx="1.5"`
+       + ` fill="${fill}"><title>${wk}: ${fmtNum(val)}${open ? " · тиждень ще не закритий" : ""}</title></rect>`
+       + `<text x="${x+bw/2}" y="${y(val)-6}" text-anchor="middle" font-family="ui-monospace,monospace"`
+       + ` font-size="10" font-weight="600" fill="${last ? COR : "#6C6A64"}">${val || ""}</text>`
+       + `<text x="${x+bw/2}" y="${H-B+18}" text-anchor="middle" font-family="ui-monospace,monospace"`
+       + ` font-size="9.5" fill="#6C6A64">${wk.slice(5)}</text>`;
+  });
+  host.innerHTML = g + "</svg>";
+  document.getElementById("chartSub").textContent =
+    `${SEO.gsc.since} — ${SEO.gsc.until} · один стовпчик — тиждень (пн–нд), останній ще не закритий`;
+  document.getElementById("chartNote").textContent = mode === "imp"
+    ? "Покази: скільки разів сторінки зʼявились у видачі. Ряд короткий — Search Console тримає дані"
+      + " лише з моменту підтвердження домену."
+    : "Кліки: переходи з органічної видачі.";
+}
+
+function table(hostId, head, rows, cols){
+  document.getElementById(hostId).innerHTML = `<thead><tr>${head}</tr></thead><tbody>`
+    + (rows || `<tr><td colspan="${cols}">немає даних</td></tr>`) + "</tbody>";
+}
+
+function renderQueries(){
+  const g = SEO.gsc;
+  table("queries",
+    "<th>Запит</th><th class=n>Показів</th><th class=n>Кліків</th><th class=n>Позиція</th>",
+    g.queries3m.slice(0,12).map(([q,c,i,ctr,pos]) =>
+      `<tr><td>${q}</td><td class="n">${fmtNum(i)}</td><td class="n">${c || "—"}</td>`
+      + `<td class="n">${pos}</td></tr>`).join(""), 4);
+  table("pages",
+    "<th>Сторінка</th><th class=n>Показів</th><th class=n>Кліків</th><th class=n>Позиція</th>",
+    g.pages.slice(0,12).map(([u,c,i,ctr,pos]) =>
+      `<tr><td>${u.replace(ORIGIN_RX, "") || "/"}</td>`
+      + `<td class="n">${fmtNum(i)}</td><td class="n">${c || "—"}</td>`
+      + `<td class="n">${pos}</td></tr>`).join(""), 4);
+  const brandRx = META.brandQueryRegex ? new RegExp(META.brandQueryRegex, "i") : null;
+  const oldRx = META.oldBrandRegex ? new RegExp(META.oldBrandRegex, "i") : null;
+  const sum = rows => rows.reduce((t,r) => t+r[1], 0), all = sum(g.queries3m);
+  const bc = brandRx ? sum(g.queries3m.filter(r => brandRx.test(r[0]) || (oldRx && oldRx.test(r[0])))) : 0;
+  const dead = oldRx ? sum(g.queries3m.filter(r => oldRx.test(r[0]))) : 0;
+  document.getElementById("qSub").textContent = "Запити — за 3 місяці · сторінки — за 28 днів";
+  document.getElementById("qNote").textContent = brandRx
+    ? `Брендові запити дають ${all ? Math.round(bc/all*100) : 0}% кліків за 3 місяці.`
+      + (dead ? ` З них ${dead} ${plural(dead, "клік", "кліки", "кліків")} приносить старий бренд.` : "")
+    : "";
+}
+
+function renderRanks(){
+  const r = SEO.ranks;
+  const sec = document.getElementById("ranks").closest("section");
+  sec.hidden = !r; if (sec.previousElementSibling && sec.previousElementSibling.tagName === "HR") sec.previousElementSibling.hidden = !r;
+  if (!r) return;
+  const short = d => d.replace(/^www\./, "").replace(/\.(com\.ua|com|ua)$/, "");
+  const head = "<th>Ключ</th><th class=n>Ми</th><th class=n>Зміна</th><th>Сторінка</th>"
+    + r.competitors.map(d => `<th class=n>${short(d)}</th>`).join("")
+    + "<th class=n>AI Overview</th>";
+  const cell = p => p ? p : '<span style="color:var(--muted)">&gt;40</span>';
+  table("ranks", head, r.rows.map(([kw,pos,prev,url,aio,vol,comp]) => {
+    const move = pos && prev ? prev - pos : null;
+    const moveTxt = move === null ? "—" : move === 0 ? "0" : (move > 0 ? "+" : "") + move;
+    return `<tr><td>${kw}</td><td class="n"><b>${cell(pos)}</b></td>`
+      + `<td class="n">${moveTxt}</td><td>${url || "—"}</td>`
+      + comp.map(p => `<td class="n">${cell(p)}</td>`).join("")
+      + `<td class="n">${aio ? '<span class="pill lm">є</span>' : "—"}</td></tr>`;
+  }).join(""), 5 + r.competitors.length);
+  document.getElementById("rankSub").textContent =
+    `${r.market} · перевірено ${r.checkedAt}${r.nextAt ? " · наступна перевірка " + r.nextAt : ""}`;
+  document.getElementById("rankNote").textContent =
+    `AI Overview стоїть у ${r.aioShare}% видач по цих ключах — навіть топ-10 не гарантує кліку, бо`
+    + ` відповідь перехоплює AI-блок, і це прямо звʼязує SEO з видимістю в LLM нижче.`
+    + ` Конкуренти заведені окремими трекерами з тим самим набором ключів: нативного порівняння`
+    + ` в OpenSEO немає. «>40» означає, що домену немає в топ-40 видачі взагалі.`;
+}
+
+// ---- AI-режим Google: окремий звіт Search Console, через API недоступний
+function renderAi(){
+  const a = SEO.ai;
+  const sec = document.getElementById("aiSec");
+  if (!a || !a.total || !a.total.imp) return;
+  sec.hidden = false;
+
+  const t = a.total, w = a.web || {clicks:0, imp:0};
+  const cards = [
+    {k:"Покази в AI-режимі", v:fmtNum(t.imp), rows:[
+      row("період", `${a.since || "—"} — ${a.until || "—"}`),
+      row("звичайний пошук", fmtNum(w.imp) + " показів"),
+      row("кліки", t.clicks === null || t.clicks === undefined ? "Google не рахує" : fmtNum(t.clicks)),
+    ]},
+    {k:"Частка від пошуку", v:(a.share === null || a.share === undefined ? "—" : a.share + "%"),
+     c: (a.share || 0) < 10 ? "c" : "", rows:[
+      row("показів разом", fmtNum(t.imp + w.imp)),
+      row("днів у вікні", w.days || "—"),
+      row("замір", a.measuredAt || "—"),
+    ]},
+  ];
+  document.getElementById("aiKpis").innerHTML = cards.map(c =>
+    `<div class="kpi"><div class="k">${c.k}</div><div class="v ${c.c||""}">${c.v}</div>${c.rows.join("")}</div>`).join("");
+
+  const days = a.days || [];
+  const host = document.getElementById("aiChart");
+  // Розрізи з'являються лише після експорту зі звіту; до того блоки не показуємо взагалі —
+  // порожня рамка з інструкцією читалась як зламаний дашборд.
+  host.parentElement.hidden = !days.length;
+  if (days.length) {
+    const W = Math.max(560, (host.parentElement?.clientWidth || 900) - 40);
+    const H = 180, L = 34, R = 12, T = 18, B = 34, iw = W-L-R, ih = H-T-B;
+    const vals = days.map(d => d[2] || 0);
+    const max = Math.max(...vals, 1);
+    const y = v => T + ih - (v/max)*ih, step = iw/days.length, bw = Math.max(1.5, Math.min(14, step-2));
+    let g = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img"`
+          + ` aria-label="покази в AI-режимі по днях">`;
+    g += `<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="#E8E6E1"/>`
+       + `<line x1="${L}" y1="${y(max)}" x2="${W-R}" y2="${y(max)}" stroke="#E8E6E1"/>`
+       + `<text x="${L-6}" y="${y(max)+4}" text-anchor="end" font-family="ui-monospace,monospace"`
+       + ` font-size="10" fill="#6C6A64">${fmtNum(max)}</text>`;
+    days.forEach(([d,,imp],i) => {
+      const val = imp || 0, x = L + step*i + (step-bw)/2, h = Math.max(val ? 1 : 0, T+ih-y(val));
+      g += `<rect x="${x}" y="${y(val)}" width="${bw}" height="${h}" rx="1"`
+         + ` fill="${COR}"><title>${d}: ${fmtNum(val)}</title></rect>`;
+    });
+    const ends = [days[0][0], days[days.length-1][0]];
+    g += `<text x="${L}" y="${H-B+18}" font-family="ui-monospace,monospace" font-size="9.5"`
+       + ` fill="#6C6A64">${ends[0]}</text>`
+       + `<text x="${W-R}" y="${H-B+18}" text-anchor="end" font-family="ui-monospace,monospace"`
+       + ` font-size="9.5" fill="#6C6A64">${ends[1]}</text>`;
+    host.innerHTML = g + "</svg>";
+  }
+
+  const hasCuts = (a.pages || []).length || (a.countries || []).length || (a.devices || []).length;
+  document.getElementById("aiPages").closest(".split").hidden = !hasCuts;
+  table("aiPages", "<th>Сторінка</th><th class=n>Показів</th>",
+    (a.pages || []).slice(0,12).map(([u,,imp]) =>
+      `<tr><td>${String(u).replace(ORIGIN_RX, "") || "/"}</td>`
+      + `<td class="n">${fmtNum(imp || 0)}</td></tr>`).join(""), 2);
+
+  const where = (a.countries || []).map(r => ["Країна", r[0], r[2]])
+    .concat((a.devices || []).map(r => ["Пристрій", r[0], r[2]]));
+  table("aiWhere", "<th>Зріз</th><th>Значення</th><th class=n>Показів</th>",
+    where.map(([k,v,imp]) => `<tr><td>${k}</td><td>${v}</td>`
+      + `<td class="n">${fmtNum(imp || 0)}</td></tr>`).join(""), 3);
+
+  document.getElementById("aiSub").textContent =
+    `Звіт «Функції на основі генеративного ШІ» · ${a.label || ""} · знято ${a.measuredAt || "—"}`;
+}
+
+const plural = (n, one, few, many) => {
+  const m10 = n % 10, m100 = n % 100;
+  return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
+};
+
+// ---- AI Visibility Score: прогін ai-visibility-report, український ринок, питання трьома мовами.
+// Бал рахується лише на небрендових питаннях. Конкуренти — тією ж формулою по тих самих
+// відповідях, тому їхні смуги й ваші кільця стоять на одній шкалі 0-100.
+const LANG = {uk: "Українською", ru: "Російською", en: "Англійською"};
+
+function donut(score, size){
+  const R = size*0.39, SW = size*0.11, c = size/2, C = 2*Math.PI*R;
+  const frac = Math.max(0, Math.min(1, (score || 0)/100));
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="бал ${score} зі 100">`
+    + `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="#EFEDE8" stroke-width="${SW}"/>`
+    + (frac ? `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="${COR}" stroke-width="${SW}"`
+      + ` stroke-dasharray="${(C*frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 ${c} ${c})"/>` : "")
+    + `<text x="${c}" y="${c + size*0.07}" text-anchor="middle" font-family="Inter Tight,Inter,sans-serif"`
+    + ` font-weight="800" font-size="${size*0.25}" fill="${score ? INK : COR_DEEP}">${score === null ? "—" : Math.round(score)}</text>`
+    + `<text x="${c}" y="${c + size*0.21}" text-anchor="middle" font-family="ui-monospace,monospace"`
+    + ` font-size="${size*0.075}" fill="#6C6A64">зі 100</text></svg>`;
+}
+
+function renderGeo(){
+  const g = SEO.geo;
+  if (!g) return;
+  document.getElementById("geoSec").hidden = false;
+
+  const fact = (l, v, c) => `<div class="row"><span class="lbl">${l}</span><span class="num ${c||""}">${v}</span></div>`;
+  // зміна проти минулого заміру; менше ніж на бал — шум (одна відповідь з 32 важить ~2 бали)
+  const was = (p, s) => {
+    if (!p || p.score === null || s.score === null) return "";
+    const d = Math.round((s.score - p.score) * 10) / 10;
+    return fact(`минулий замір`, `${p.score} → ${s.score} (${d > 0 ? "+" : ""}${d})`,
+                Math.abs(d) < 1 ? "" : d > 0 ? "f" : "c");
+  };
+  const card = (title, s, extra, all, p) => `<div class="geo-card${all ? " all" : ""}"><div class="k">${title}</div>`
+    + donut(s.score, all ? 132 : 112) + `<div class="facts">`
+    + fact("вас назвали", `${s.hit} з ${s.of}`, s.hit ? "f" : "") + was(p, s)
+    + fact("цитують сайт", `${s.cited} з ${s.of}`, s.cited ? "f" : "") + (extra || "") + `</div></div>`;
+  document.getElementById("geoLangs").innerHTML =
+    card("Разом", g.total, fact("брендові питання", `${g.branded.hit} з ${g.branded.of}`, g.branded.hit ? "f" : ""), true,
+         g.prev && g.prev.total)
+    + g.langs.map(l => card(LANG[l] || l, g.byLang[l], "", false, g.prev && g.prev.byLang[l])).join("");
+
+  const place = r => g.rivals.findIndex(x => x.score === r.score) + 1;
+  const tied = r => g.rivals.filter(x => x.score === r.score).length > 1;
+  const short = {uk: "UA", ru: "RU", en: "EN"};
+  document.getElementById("geoRivals").innerHTML = '<div class="lb">' + g.rivals.map(r =>
+      `<div class="lb-row${r.me ? " me" : ""}">`
+      + `<span class="r">${tied(r) ? "=" : ""}${place(r)}</span>`
+      + `<span class="nm" title="${r.name}">${r.name}<small>названо ${r.hit} з ${r.of} · `
+      + g.langs.map(l => `${short[l]} ${r.lang[l]}`).join(" · ") + `</small></span>`
+      + `<span class="bar"><i style="width:${Math.min(100, r.score || 0)}%"></i><b>${r.score}</b></span></div>`).join("")
+    + `</div><div class="lb-meta">та сама шкала й формула, що в кільцях: 60% «названо» + 40% «процитовано»,`
+    + ` лише небрендові відповіді</div>`;
+
+  const per = g.byModel[0] ? g.byModel[0].lang[g.langs[0]][1] : 0;
+  table("geoModels",
+    "<th>Модель</th>" + g.langs.map(l => `<th class=n>${short[l]}</th>`).join("")
+    + "<th class=n>Брендові</th><th class=n>Цитує сайт</th>",
+    g.byModel.map(m => `<tr><td>${m.model}<br><span class="pill">${m.version}</span></td>`
+      + g.langs.map(l => `<td class="n${m.lang[l][0] ? "" : " z"}">${m.lang[l][0]} з ${m.lang[l][1]}</td>`).join("")
+      + `<td class="n">${m.branded[0]} з ${m.branded[1]}</td><td class="n${m.cites ? "" : " z"}">${m.cites}</td></tr>`).join(""),
+    3 + g.langs.length);
+
+  const top = Math.max(...g.sources.map(s => s[1]), 1);
+  document.getElementById("geoSources").innerHTML = '<div class="lb">' + g.sources.map(([d, n, me], i) =>
+      `<div class="lb-row${me ? " me" : ""}"><span class="r">${i + 1}</span>`
+      + `<span class="nm" title="${d}">${d}</span>`
+      + `<span class="bar"><i style="width:${(n / top * 100).toFixed(1)}%"></i><b>${n}</b></span></div>`).join("")
+    + `</div><div class="lb-meta">у скількох із ${g.answers} відповідей домен стоїть джерелом (брендові теж)</div>`;
+
+  table("geoActions", "<th>Що</th><th>Як</th><th class=n>Скільки</th>",
+    g.actions.map(a => `<tr><td><strong>${a.title}</strong></td><td>${a.what}</td>`
+      + `<td class="n">${a.effort}</td></tr>`).join(""), 3);
+  document.getElementById("geoActions").closest(".mini").hidden = !g.actions.length;
+
+  document.getElementById("geoSub").textContent =
+    `Замір ${g.measuredAt}${META.audience ? " · " + META.audience : ""} · ${g.prompts} промптів × ${g.models} моделі`
+    + ` = ${g.answers} ${plural(g.answers, "відповідь", "відповіді", "відповідей")}`
+    + (g.failed ? ` · ${g.failed} не виміряно` : "");
+  document.getElementById("geoNote").textContent =
+    `У бал ідуть лише небрендові питання: по ${per} відповідей на кожну мову. Брендові питання`
+    + ` (ті, де в тексті вже є ${META.brand || "назва бренду"}) показують тільки, чи вас упізнають за іменем.`
+    + (META.geoCountryNote ? " " + META.geoCountryNote : "")
+    + " Одна відповідь від заміру до заміру плаває, дивитись варто на зміну бала, не на окрему клітинку."
+    + (g.notesFor && g.notesFor !== g.measuredAt ? ` Дії написані під прогін ${g.notesFor}, цифри новіші.` : "");
+}
+
+// ---- динаміка AI Visibility Score: кожен закритий прогін — точка. Колір лише у вас
+// (загальний бал), мови й конкуренти сірі й підписані прямо біля кінця лінії (без легенди).
+// Перемикач: «По мовах» — ваш бал по мові питання, «Конкуренти» — та сама формула для них.
+let trendMode = "rivals";
+function renderGeoTrend(){
+  const g = SEO.geo, host = document.getElementById("geoTrend");
+  if (!g || !host) return;
+  const hist = g.history || [];
+  const note = document.getElementById("geoTrendNote");
+  if (hist.length < 2) {
+    host.innerHTML = `<div class="empty">поки один замір (${g.measuredAt}) — лінія зʼявиться після наступного прогону</div>`;
+    note.textContent = "Кожен прогін ai-visibility-report стає точкою на цьому графіку.";
+    return;
+  }
+  const short = {uk: "UA", ru: "RU", en: "EN"};
+  const rivalNames = [...new Set(hist.flatMap(h => Object.keys(h.rivals || {})))];
+  const others = trendMode === "rivals"
+    ? rivalNames.map(n => ({name: n, vals: hist.map(h => (h.rivals || {})[n] ?? null), main: false}))
+    : g.langs.map(l => ({name: short[l] || l, vals: hist.map(h => h.byLang[l] ? h.byLang[l].score : null), main: false}));
+  const series = [...others, {name: trendMode === "rivals" ? "Ви" : "Разом", vals: hist.map(h => h.total.score), main: true}];
+  const all = series.flatMap(s => s.vals).filter(v => v !== null && v !== undefined);
+  const lastVal = sr => { for (let i = sr.vals.length - 1; i >= 0; i--) if (sr.vals[i] !== null) return sr.vals[i]; return null; };
+  const labelW = Math.max(...series.map(sr => (sr.name + " " + lastVal(sr)).length)) * 6.8 + 18;
+  const W = Math.max(560, (host.parentElement?.clientWidth || 900) - 8);
+  const H = 260, L = 36, R = Math.max(96, labelW), T = 22, B = 34, iw = W - L - R, ih = H - T - B;
+  const step = Math.max(...all) > 40 ? 20 : 5;
+  const max = Math.max(step * 2, Math.ceil((Math.max(...all) + 1) / step) * step);
+  const pad = Math.min(40, iw * 0.08);
+  const x = i => L + pad + i * (iw - 2 * pad) / (hist.length - 1);
+  const y = v => T + ih - (v / max) * ih;
+  const MONO = 'font-family="ui-monospace,monospace"';
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="AI Visibility Score по замірах">`;
+  for (let t = 0; t <= max + 1e-9; t += step)
+    s += `<line x1="${L}" y1="${y(t)}" x2="${W - R}" y2="${y(t)}" stroke="#E8E6E1"/>`
+       + `<text x="${L - 8}" y="${y(t) + 4}" text-anchor="end" ${MONO} font-size="10" fill="#6C6A64">${t}</text>`;
+  hist.forEach((h, i) => {
+    s += `<text x="${x(i)}" y="${H - 10}" text-anchor="middle" ${MONO} font-size="10" fill="#6C6A64">${h.at}</text>`;
+    if (!h.samePrompts) s += `<text x="${x(i)}" y="${T - 8}" text-anchor="middle" ${MONO} font-size="9.5" fill="${COR_DEEP}">інші питання</text>`;
+  });
+  const ends = [];
+  series.forEach(sr => {
+    const col = sr.main ? COR : PAST, sw = sr.main ? 3 : 1.6;
+    // лінія рветься там, де конкурента в прогоні не міряли
+    let seg = [];
+    const flush = () => { if (seg.length > 1) s += `<polyline points="${seg.join(" ")}" fill="none" stroke="${col}"`
+      + ` stroke-width="${sw}" stroke-linejoin="round" stroke-linecap="round"/>`; seg = []; };
+    sr.vals.forEach((v, i) => v === null ? flush() : seg.push(x(i).toFixed(1) + "," + y(v).toFixed(1)));
+    flush();
+    let last = null;
+    sr.vals.forEach((v, i) => {
+      if (v === null) return;
+      last = [i, v];
+      s += `<circle cx="${x(i)}" cy="${y(v)}" r="${sr.main ? 4.5 : 3}" fill="${sr.main ? COR : "#fff"}" stroke="${col}" stroke-width="1.6">`
+         + `<title>${sr.name} · ${hist[i].at}: ${v} зі 100</title></circle>`;
+      if (sr.main) s += `<text x="${x(i)}" y="${y(v) - 10}" text-anchor="middle" ${MONO} font-size="11" font-weight="700" fill="${COR_DEEP}">${v}</text>`;
+    });
+    if (last) ends.push({y: y(last[1]), txt: `${sr.name} ${last[1]}`, main: sr.main, cut: last[0] < hist.length - 1});
+  });
+  // підписи справа: розсунути, якщо лінії закінчуються поруч; не вилазити за вісь
+  ends.sort((a, b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 13) ends[i].y = ends[i - 1].y + 13;
+  const over = ends.length ? ends[ends.length - 1].y - (T + ih) : 0;
+  if (over > 0) ends.forEach(e => e.y -= over);
+  const xe = x(hist.length - 1) + 12;
+  ends.forEach(e => s += `<text x="${xe}" y="${e.y + 4}" ${MONO} font-size="11" font-weight="${e.main ? 700 : 500}"`
+    + ` fill="${e.main ? COR_DEEP : "#6C6A64"}">${e.txt}${e.cut ? " (раніше)" : ""}</text>`);
+  host.innerHTML = s + "</svg>";
+
+  const first = hist[0].total.score, lastS = hist[hist.length - 1].total.score;
+  const d = Math.round((lastS - first) * 10) / 10;
+  const head = `${hist.length} ${plural(hist.length, "замір", "заміри", "замірів")}: ваш загальний бал ${first} → ${lastS}`
+    + ` (${d > 0 ? "+" : ""}${d}). Коралова лінія — ви. `;
+  note.textContent = head + (trendMode === "rivals"
+      ? "Сірі — конкуренти, рахуються тією ж формулою по тих самих відповідях, що й у «Бал проти конкурентів»:"
+        + " 60% «назвали» + 40% «процитували», лише небрендові питання."
+        + " Одна відповідь з 96 зсуває лінію приблизно на бал, тож зміну в межах 2 балів читати як шум."
+      : "Сірі — ваш бал по мові питання, та сама формула, що в кільцях. Одна відповідь зсуває мовну лінію на 2–3 бали,"
+        + " загальну — приблизно на бал, тож зміну в межах 2 балів читати як шум.")
+    + (hist.some(h => !h.samePrompts) ? " Позначка «інші питання» — у тому прогоні був інший набір питань, порівнювати з обережністю." : "");
+}
+document.querySelectorAll("[data-trend]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-trend]").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+  trendMode = b.dataset.trend; renderGeoTrend();
+}));
+
+document.querySelectorAll("[data-mode]").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-mode]").forEach(o => o.setAttribute("aria-pressed", String(o===b)));
+  mode = b.dataset.mode; renderChart();
+}));
+
+function renderAll(){ renderKpis(); renderChart(); renderQueries(); renderRanks(); renderAi(); renderGeo(); renderGeoTrend(); }
+renderAll();
+
+let resizeTimer;
+addEventListener("resize", () => { clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => { renderChart(); renderAi(); renderGeoTrend(); }, 120); });
+</script>
+

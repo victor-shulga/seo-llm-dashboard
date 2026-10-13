@@ -1,0 +1,10 @@
+{
+ "page": "dashboard.html",
+ "domain": "example.com",
+ "brand_name": "Example Agency",
+ "title": "Пошук і LLM · демо",
+ "h1": "Пошук і LLM-видимість",
+ "tabs": [],
+ "demo_data": "demo_data.json",
+ "colors": {}
+}
