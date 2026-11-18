@@ -540,7 +540,7 @@ const plural = (n, one, few, many) => {
   return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many;
 };
 
-// ---- AI Visibility Score: прогін ai-visibility-report, український ринок, питання трьома мовами.
+// ---- AI Visibility Score: замір avr.py, український ринок, питання трьома мовами.
 // Бал рахується лише на небрендових питаннях. Конкуренти — тією ж формулою по тих самих
 // відповідях, тому їхні смуги й ваші кільця стоять на одній шкалі 0-100.
 const LANG = {uk: "Українською", ru: "Російською", en: "Англійською"};
@@ -687,7 +687,7 @@ function renderGeoTrend(){
   const note = document.getElementById("geoTrendNote");
   if (hist.length < 2) {
     host.innerHTML = `<div class="empty">поки один замір (${g.measuredAt}) — лінія зʼявиться після наступного прогону</div>`;
-    note.textContent = "Кожен прогін ai-visibility-report стає точкою на цьому графіку.";
+    note.textContent = "Кожен щомісячний замір стає точкою на цьому графіку.";
     return;
   }
   const short = {uk: "UA", ru: "RU", en: "EN"};

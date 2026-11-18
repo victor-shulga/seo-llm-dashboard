@@ -1,17 +1,18 @@
 ---
 name: seo-llm-dashboard
 description: >-
-  Sets up a live "Search + LLM visibility" dashboard for any site, end to end: DataForSEO account,
-  self-hosted OpenSEO on Cloudflare (Search Console OAuth, rank tracking, MCP via an Access service
-  token), a direct Search Console MCP on a Google Cloud service account, an ai-visibility-report run
-  (AI Visibility Score per language vs competitors), optional Google AI-mode export, the single-file
-  dashboard page, deploy to Cloudflare Pages or Netlify, and the weekly + monthly scheduled refresh.
-  Use when the user says "set up the SEO LLM dashboard", "search and AI visibility dashboard",
-  "connect OpenSEO", "connect Search Console", "налаштуй SEO і LLM дашборд",
-  "дашборд видимості в пошуку і нейромережах", or wants to track a brand in Google and in
-  ChatGPT/Gemini/Claude/Perplexity on one page. Also runs AI-only (every prompt with each model's
-  answer, no Google setup) from an ai-visibility-report run, the skill the AI block needs.
-  NOT a one-off PDF report (that is ai-visibility-report), NOT a site audit.
+  One skill, one page: how a site is found in Google and named by ChatGPT, Gemini, Claude and
+  Perplexity. Measures AI visibility itself through DataForSEO (prompts, live answers, scoring,
+  every answer kept; about 4 USD per 108 answers, shown first and spent only after a yes), then
+  builds a single-file HTML dashboard: AI Visibility Score per language and model vs competitors,
+  cited sources, every prompt with each model's answer, plus Search Console clicks and queries,
+  rank tracking vs competitors and Google AI-mode when Google is connected (self-hosted OpenSEO on
+  Cloudflare). Google is optional: without it the page is AI-only. Guides setup step by step.
+  Use when the user says
+  "set up the SEO LLM dashboard", "AI visibility dashboard", "search and AI visibility dashboard",
+  "налаштуй SEO і LLM дашборд", "дашборд видимості в AI", "як нас бачать нейромережі",
+  or wants a brand tracked in Google and AI assistants on one page. NOT a PDF report for a client
+  (ai-visibility-report), NOT a site audit.
 ---
 
 # SEO + LLM visibility dashboard
@@ -28,17 +29,17 @@ What the finished page shows (all sections hide themselves when their source is 
 | Search by week, top queries, top pages, branded-query share | Search Console via OpenSEO | weekly |
 | Positions by keyword vs competitors + AI Overview presence | OpenSEO rank tracking (DataForSEO) | weekly |
 | Google AI-mode impressions | Search Console UI export (no API exists) | when exported |
-| AI Visibility Score: total + per language, vs competitors, per model, cited sources, what to do | ai-visibility-report run (DataForSEO live LLM answers) | monthly |
+| AI Visibility Score: total + per language, vs competitors, per model, cited sources, every prompt × answer, what to do | `scripts/avr.py` run (DataForSEO live LLM answers) | monthly |
 
 ```
 DataForSEO ──► OpenSEO worker (Cloudflare, Access) ──MCP──► Claude / inject_dashboard.py ──► dashboard.html ──► Pages/Netlify
    │                 └─ Google OAuth ─► Search Console                    ▲
-   └──────────► ai-visibility-report run (cells JSON, PDF) ────────────────┘
+   └──────────► scripts/avr.py run (cells JSON, raw answers) ──────────────┘
 Google Cloud service account ─► gsc MCP (direct GSC: URL inspection, index coverage, any filter)
 ```
 
 Talk to the user in their language. Code, configs and this file stay English.
-The page UI ships in Ukrainian; translate the static labels once per non-Ukrainian site (see Step 7).
+The page UI ships in Ukrainian; translate the static labels once per non-Ukrainian site (see `references/06-build-and-deploy.md`).
 
 ## Hard rules
 
@@ -46,7 +47,7 @@ The page UI ships in Ukrainian; translate the static labels once per non-Ukraini
   that reads from the clipboard or prompts (`pbpaste > file`, `wrangler secret put`), never ask them to paste
   a key to you, never print one, never write one into a repo or a project `.mcp.json`. MCP servers with a
   header secret go to `--scope user`.
-- **Money only with a yes.** DataForSEO spend (ai-visibility collect, extra rank trackers) is shown with
+- **Money only with a yes.** DataForSEO spend (`avr.py collect` and `volume`, extra rank trackers) is shown with
   the estimate first. Monthly jobs get an explicit budget in their prompt.
 - **Client work uses the client's brand colours** in `colors`, never the agency's.
 - **Confidential.** The page lists competitors and weak spots: put Access/password in front of it for
@@ -58,91 +59,75 @@ The page UI ships in Ukrainian; translate the static labels once per non-Ukraini
 To show what the page looks like, send `templates/demo/dashboard.html` (fictional data). Never link the
 owner's own live report as an example: it sits next to their other reports.
 
-## AI only (no Google, no OpenSEO)
+## The setup path (what the user sees: `SETUP.uk.md`)
 
-For someone who wants just the answer layer: every prompt, what each model answered, who it named
-and which sites it cited. Needs the ai-visibility-report skill
-(`npx skills add victor-shulga/ai-visibility-report`) and a DataForSEO key, nothing else
-(a 27-prompt x 4-model run is 108 answers, about 4 USD; show the estimate and get a yes first).
+`SETUP.uk.md` is the human guide, five steps in plain Ukrainian. Walk the user through the same steps in
+their language, one at a time, and say which ones they can skip:
 
-1. Run ai-visibility-report for the brand (collect + prominence; the PDF is optional). The run folder
-   holds `<domain>_config.json`, `*_cells.json`, the finalized `*_ai_visibility_<YYYY-MM>.json` and `raw/`.
-2. Copy `templates/dashboard.html`, `templates/favicon.svg` and
-   `templates/dashboard.config.ai-only.example.json` (as `dashboard.config.json`) into one folder; set
-   `domain`, `brand_name`, `geo.run_dir`. Leave out `openseo` and `ai_mode_file`: the search, rank and
-   AI-mode sections then hide themselves. `geo.notes_file` is optional.
-3. `python3 scripts/inject_dashboard.py <folder>/dashboard.config.json`, open `dashboard.html` locally
-   (it is self-contained) or publish it. Re-run after every new measurement.
+| Step | Gives | Required? | Reference |
+|---|---|---|---|
+| 1. DataForSEO | live AI answers (and rank checks for step 3) | yes | `references/01-dataforseo.md` |
+| 2. Search Console via OpenSEO | clicks, impressions, queries, pages | no (AI-only start) | `references/02-openseo.md` A-D, `05-gsc-ai-mode.md` |
+| 3. Rank tracking vs competitors | Google positions per keyword | no, needs step 2 | `references/02-openseo.md` E |
+| 4. First measurement + page | the dashboard HTML | yes | `references/04-ai-visibility.md`, `06-build-and-deploy.md` |
+| 5. Monthly refresh | the trend, the change vs last month | recommended | `templates/scheduled-tasks.md` |
 
-Steps 1-4, 6 and 8 below are for the full page with Google data.
+**AI-only start (steps 1, 4, 5).** Copy `templates/dashboard.html`, `templates/favicon.svg` and
+`templates/dashboard.config.ai-only.example.json` (as `dashboard.config.json`) into one folder; set
+`domain`, `brand_name`, `geo.run_dir`. No `openseo` and no `ai_mode_file`: the search, rank and AI-mode
+sections hide themselves. Adding Google later = add the `openseo` block and re-run inject.
 
 ## Step 0: intake in ONE message
 
 Ask only what is missing:
 1. Domain, brand name and its spellings (Latin + Cyrillic, with/without space); any retired brand name.
 2. Market: country, and every language buyers ask in. Who the buyer is, in a few words.
-3. 4 topics buyers ask about; 8-15 search keywords to track in Google.
-4. 3-5 competitors with domains (for the rank table and for the AI block; propose from the live SERP and
-   from who the models name if the user has none).
-5. Where it lives: Cloudflare Pages on the owner's domain, or Netlify; brand colours.
-6. What already exists: DataForSEO account? OpenSEO instance? GSC property verified, and whose Google
-   account has access? Cloudflare account and a domain in it?
+3. 4 topics buyers ask about; for the Google part also 8-15 search keywords to track.
+4. 3-5 competitors with domains (propose from who the models and the live SERP name if the user has none).
+5. AI-only or with Google? Where the page lives (local file, Cloudflare Pages, Netlify); brand colours.
+6. What already exists: DataForSEO account? OpenSEO instance? GSC property verified, whose Google account?
 
 ## Step 1: DataForSEO (`references/01-dataforseo.md`)
 
-Account, top-up, Base64 key into the OpenSEO worker secret and `~/.config/dataforseo/key`. Smoke test ($0).
+Account, $50 minimum top-up, API login + password from API Access, stored by the user's own command
+outside any repo. Then `python3 <skill-dir>/scripts/avr.py check` (free) must print `DataForSEO OK`.
+On first use, if `check` fails, this step is where you start; never ask for the key in the chat.
 
-## Step 2: OpenSEO (`references/02-openseo.md`)
+## Step 2 (optional): Search Console through OpenSEO (`references/02-openseo.md` A-D)
 
 New owner: deploy (A), custom domain + Access (B), service token + patch + user-scope MCP (C), Google OAuth
-published to production (D). Existing instance: only a new project + GSC connect + trackers (D6-7, E).
-Done when `mcp__open-seo__get_search_console_performance` returns rows for the property (new MCP servers
-appear only in a new session: tell the user to restart Claude after `claude mcp add`).
+published to production (D). Existing instance: only a new project + GSC connect. Done when
+`mcp__open-seo__get_search_console_performance` returns rows for the property (new MCP servers appear only
+in a new session: tell the user to restart Claude after `claude mcp add`).
+Direct Search Console MCP (`references/03-gsc-service-account.md`) is optional, for diagnosis only.
+Google AI-mode impressions (`references/05-gsc-ai-mode.md`): ask once whether the owner will export monthly.
 
-## Step 3: direct Search Console MCP (`references/03-gsc-service-account.md`)
-
-Optional for the page, recommended for diagnosis (index coverage, URL inspection). Done when
-`--check` lists the property.
-
-## Step 4: rank tracking (`references/02-openseo.md` section E)
+## Step 3 (optional): rank tracking (`references/02-openseo.md` E)
 
 Own tracker + one tracker per competitor with the same keywords. First check comes on schedule.
 
-## Step 5 (optional): AI visibility baseline (`references/04-ai-visibility.md`, with the ai-visibility-report skill)
+## Step 4: first AI measurement and the page (`references/04-ai-visibility.md`, `06-build-and-deploy.md`)
 
-If the ai-visibility-report skill is installed (`npx skills add victor-shulga/ai-visibility-report`), run it
-for the baseline. Without it, skip this step: the AI Visibility Score block stays hidden and the rest of the
-page works.
+Decide market and languages first. Run config with `lang` on every prompt, `avr.py estimate` → show the
+sum → wait for yes → `avr.py collect` → `review` → `prominence.json` → `finalize`. Then `seo_geo.json`
+(3-4 actions, each with a number from the run), copy the template, fill `dashboard.config.json`, run
+`scripts/inject_dashboard.py <config>`, preview via `templates/serve_preview.py`, check console +
+screenshot, publish where the user wants, protect access for clients.
 
+## Step 5: monthly refresh (`templates/scheduled-tasks.md`)
 
-Decide market and languages first (the US default was wrong once). `lang` on every prompt, per-model
-country dict, confirm cost, collect, prominence, prose, PDF. Then write `seo_geo.json` (3-4 actions, each
-with a number from the run).
-
-## Step 6 (optional): AI-mode export (`references/05-gsc-ai-mode.md`)
-
-Ask once whether the owner will export monthly; do not push it again after a no.
-
-## Step 7: build and deploy (`references/06-build-and-deploy.md`)
-
-Copy `templates/dashboard.html`, `favicon.svg`, fill `dashboard.config.json`, run
-`scripts/inject_dashboard.py <config>`, preview via `templates/serve_preview.py`, check console + screenshot,
-deploy, verify live with curl, protect access for clients.
-
-## Step 8: schedule (`templates/scheduled-tasks.md`)
-
-Weekly refresh (no spend) and monthly AI re-measure (budgeted, only with ai-visibility-report). Create both
-with the Claude scheduled-tasks tool, then "Run now" each once so tool approvals are stored. They run only
-while the Claude app is open. Any other scheduler (cron, CI) can run the same weekly command instead.
+Weekly Google refresh (no spend, only with step 2) and monthly AI re-measure (budgeted). Create them with
+the Claude scheduled-tasks tool, then "Run now" each once so tool approvals are stored. They run only
+while the Claude app is open. Any other scheduler (cron, CI) can run the same commands instead.
 
 ## Definition of done
 
 - [ ] `inject_dashboard.py` prints a line for every configured source, no errors
-- [ ] page opens with no console errors; KPI row, weekly chart, queries/pages, ranks (and the AI block, if used) visible
+- [ ] page opens with no console errors; the AI block (score, languages, models, rivals, sources, prompts × answers) visible, plus KPI row, weekly chart, queries/pages and ranks when Google is connected
 - [ ] brand colours applied; favicon recoloured; no leftover names of another brand anywhere on the page
 - [ ] live URL returns the new build (curl check), access protected if it is a client
-- [ ] if the AI block is used: `seo_geo.json` actions match the latest run (`forRun` = run date)
-- [ ] weekly task exists (monthly too if the AI block is used), each run once manually
+- [ ] `seo_geo.json` actions match the latest run (`forRun` = run date)
+- [ ] monthly task exists (weekly too with Google), each run once manually
 - [ ] the user got: URL, what each section means in one line each, costs per month, what to do if GSC
       stops (reconnect in OpenSEO)
 
@@ -150,27 +135,31 @@ while the Claude app is open. Any other scheduler (cron, CI) can run the same we
 
 | Integration | Used for | Required? | Auth/setup |
 |---|---|---|---|
-| DataForSEO | rank checks, LLM answers, AI keyword volume | yes | Base64 API key: worker secret `DATAFORSEO_API_KEY` + `~/.config/dataforseo/key` |
-| Cloudflare (Workers, D1, KV, R2, Zero Trust) | hosting OpenSEO, Access in front of it | yes | `wrangler login`; Access app + email policy + service-token policy |
-| OpenSEO (self-hosted) | GSC data + rank tracking via MCP | yes | user-scope MCP `open-seo` with CF-Access-Client-Id/Secret headers; service-token patch applied |
-| Google Cloud OAuth client | OpenSEO ↔ Search Console | yes | Search Console API on; Web client; app published to production; secrets in worker |
-| Google Search Console | the site's search data | yes | property verified; connecting Google account (or service account) added as user |
+| DataForSEO | live LLM answers, AI keyword volume, rank checks | yes | API login + password (or the Base64 key): `~/.config/dataforseo/key` or env vars; OpenSEO worker secret `DATAFORSEO_API_KEY` with step 2 |
+| Cloudflare (Workers, D1, KV, R2, Zero Trust) | hosting OpenSEO, Access in front of it | Google part only | `wrangler login`; Access app + email policy + service-token policy |
+| OpenSEO (self-hosted) | GSC data + rank tracking via MCP | Google part only | user-scope MCP `open-seo` with CF-Access-Client-Id/Secret headers; service-token patch applied |
+| Google Cloud OAuth client | OpenSEO ↔ Search Console | Google part only | Search Console API on; Web client; app published to production; secrets in worker |
+| Google Search Console | the site's search data | Google part only | property verified; connecting Google account (or service account) added as user |
 | Google Cloud service account | direct `gsc` MCP | recommended | JSON key in `~/.config/gsc-mcp/`, added as user in Search Console |
-| ai-visibility-report skill | AI Visibility Score | optional (AI block only) | `npx skills add victor-shulga/ai-visibility-report`; same DataForSEO key |
-| Cloudflare Pages or Netlify | hosting the page | yes (one of them) | `wrangler pages deploy` / `netlify deploy --site <UUID>` |
-| `uv`, python3, Chrome | scripts, PDF, render checks | yes | local |
+| ai-visibility-report skill | a client PDF from the same run folder | optional | `npx skills add victor-shulga/ai-visibility-report` |
+| Cloudflare Pages or Netlify | hosting the page | optional (the HTML also opens from disk) | `wrangler pages deploy` / `netlify deploy --site <UUID>` |
+| python3 + curl, Chrome | scripts (standard library), render checks | yes | local; `uv` only for `gsc_mcp_server.py` |
 | Claude scheduled tasks | weekly + monthly refresh | recommended | scheduled-tasks tool, app must be open |
 
 ## Files
 
 | File | Role |
 |---|---|
-| `scripts/inject_dashboard.py` | config-driven: pulls OpenSEO (MCP over HTTP), AI-mode JSON, ai-visibility run; rewrites the page in place |
+| `scripts/avr.py` | AI measurement CLI: check, estimate, collect, volume, review, finalize, remeasure |
+| `scripts/dfs.py`, `scripts/aggregate.py` | DataForSEO transport and answer parsing; the numbers of a run |
+| `scripts/inject_dashboard.py` | config-driven: pulls OpenSEO (MCP over HTTP), AI-mode JSON, the run folder; rewrites the page in place |
 | `scripts/gsc_mcp_server.py` | direct Search Console MCP (service account) and CLI |
 | `scripts/import_gsc_ai.py` | Search Console AI-mode export (ZIP/CSV, localized headers) -> JSON |
 | `templates/dashboard.html` | the page (single file, data inlined as `const SEO = …;`) |
 | `templates/dashboard.config.example.json` | every config field |
 | `templates/dashboard.config.ai-only.example.json` | the AI-only page: no OpenSEO, no Search Console |
+| `templates/ai_run.config.example.json` | the AI measurement run config |
+| `SETUP.uk.md` | the five setup steps for the user, plain Ukrainian |
 | `templates/seo_geo.example.json` | "what to do" rows |
 | `templates/scheduled-tasks.md` | weekly + monthly task prompts with placeholders |
 | `templates/serve_preview.py`, `templates/favicon.svg` | local preview, tab icon |

@@ -10,7 +10,7 @@ self-contained file (all data inlined, no fetch), so it can be dropped on any st
 
 Sources:
   OpenSEO (self-hosted, via its MCP over HTTP) -> Search Console + rank tracking
-  <geo.run_dir>  (ai-visibility-report run)    -> AI Visibility Score, per language, vs competitors
+  <geo.run_dir>  (avr.py run, this skill)      -> AI Visibility Score, per language, vs competitors
   <geo.notes_file>                             -> "what to do" rows written by hand per run
   <ai_mode_file> (import_gsc_ai.py output)     -> Google AI-mode impressions (UI export only)
 
@@ -211,9 +211,9 @@ def ai_mode(days):
     return ai
 
 
-# ── AI Visibility Score (ai-visibility-report run) ─────────────────────────────
+# ── AI Visibility Score (avr.py run folder) ────────────────────────────────────
 def diagnosis():
-    """Latest output of ai-visibility-report/scripts/diagnose.py; can be a newer month than the score."""
+    """Latest *_diagnosis.json in the run folder, if a diagnosis step wrote one; optional."""
     files = sorted(GEO_RUNS.glob("*_ai_visibility_*_diagnosis.json"))
     if not files:
         return None
@@ -226,7 +226,7 @@ def diagnosis():
 def geo():
     """Score, per language, vs competitors, computed from the run's cells.
 
-    Same formula as the ai-visibility-report headline: 60% share of unbranded answers that name
+    Same formula as the avr.py / ai-visibility-report headline: 60% share of unbranded answers that name
     the brand + 40% share that cite its domain. Competitors use the SAME formula on the same
     answers (not share of voice as in the PDF), so their bars sit on the donut's 0-100 scale.
     Only finalized months (data JSON exists) are shown, so a half-collected run never leaks.
@@ -402,7 +402,7 @@ def chrome(src, seo):
     if seo.get("ai"):
         parts.append("AI-режим Google — ручний експорт звіту «Функції на основі генеративного ШІ» (API його не віддає)")
     if seo.get("geo"):
-        parts.append("AI Visibility Score — прогін ai-visibility-report (DataForSEO, живі відповіді моделей)")
+        parts.append("AI Visibility Score — замір через DataForSEO (живі відповіді моделей)")
     parts = ["Джерела: " + " · ".join(parts)] if parts else []
     parts.append(f"оновлено {seo['builtAt']}")
     src = re.sub(r"<footer>.*?</footer>", "<footer>" + " · ".join(e(p) for p in parts) + "</footer>",

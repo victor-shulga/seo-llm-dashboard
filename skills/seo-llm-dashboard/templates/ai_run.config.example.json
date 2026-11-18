@@ -1,0 +1,42 @@
+{
+  "brand_name": "Example Studio",
+  "brand_domain": "example.com",
+  "brand_pattern": "example\\s*studio|example\\.com",
+  "competitors": [
+    {"name": "Sample Labs", "domain": "example.org", "pattern": "sample\\s*labs"},
+    {"name": "Demo Works", "domain": "example.net", "pattern": "\\bdemo\\s*works"}
+  ],
+  "competitor_live_probing": true,
+  "location_name": "United States",
+  "language_code": "en",
+  "language_name": "English",
+  "country_iso": "US",
+  "track_a_platform": "chat_gpt",
+  "period_current": "September 2026",
+  "period_slug": "2026-09",
+  "period_prev": null,
+  "date_generated": "2026-09-11",
+  "keywords": ["web development agency for SaaS startups"],
+  "prompts_per_keyword": 4,
+  "prompts": [
+    {"id": "p1", "keyword": "web development agency for SaaS startups", "type": "Informational", "branded": false, "lang": "en",
+     "text": "What should a SaaS startup look for when hiring an outsourced web development agency?"},
+    {"id": "p2", "keyword": "web development agency for SaaS startups", "type": "Comparative", "branded": false, "lang": "en",
+     "text": "Who are the best web development agencies for SaaS startups in the US?"},
+    {"id": "p3", "keyword": "web development agency for SaaS startups", "type": "Recommendation", "branded": false, "lang": "en",
+     "text": "Can you recommend a development agency that specializes in building SaaS products?"},
+    {"id": "p4", "keyword": "web development agency for SaaS startups", "type": "Branded", "branded": true, "lang": "en",
+     "text": "Is Example Studio a good development partner for a SaaS startup?"}
+  ],
+  "score_weights": {"mention": 0.6, "citation": 0.4},
+  "llm_model_overrides": {},
+  "white_label": {
+    "agency_name": "Your Agency",
+    "report_title": "AI Visibility Report",
+    "footer_text": "Prepared by Your Agency for Example Studio  •  Confidential",
+    "logo_path": null,
+    "primary_color": "#1F2937",
+    "accent_color": "#2563EB",
+    "font_path": null, "font_name": null, "font_path_bold": null, "font_path_italic": null
+  }
+}
