@@ -39,10 +39,17 @@ Google Cloud service account ─► gsc MCP (direct GSC: URL inspection, index c
 ```
 
 Talk to the user in their language. Code, configs and this file stay English.
-The page UI ships in Ukrainian; translate the static labels once per non-Ukrainian site (see `references/06-build-and-deploy.md`).
+The page UI ships in Ukrainian and is not translated or edited by hand (see Hard rules).
 
 ## Hard rules
 
+- **The design is fixed.** The page is ALWAYS built by `scripts/inject_dashboard.py` from
+  `templates/dashboard.html`. Never write, edit, translate or "improve" its HTML/CSS/JS. Your part is only:
+  (a) fill `dashboard.config.json` and the run config, (b) run collection after the user's yes, (c) write
+  recommendation wording into the actions JSON via `recommend.py`, (d) run the build. Brand colours only
+  through `colors` in the config, keys `accent`, `accent_deep`, `accent_soft`, `ink`, `positive`,
+  `positive_soft`. The build ends with a self-check; if it fails, give the user its message and fix the
+  cause, never hand-patch the page.
 - **Secrets never pass through the chat.** Keys, client secrets, service tokens: give the user a command
   that reads from the clipboard or prompts (`pbpaste > file`, `wrangler secret put`), never ask them to paste
   a key to you, never print one, never write one into a repo or a project `.mcp.json`. MCP servers with a
@@ -123,7 +130,7 @@ while the Claude app is open. Any other scheduler (cron, CI) can run the same co
 
 ## Definition of done
 
-- [ ] `inject_dashboard.py` prints a line for every configured source, no errors
+- [ ] `inject_dashboard.py` prints a line for every configured source and ends with «перевірка сторінки: ок»
 - [ ] page opens with no console errors; the AI block (score, languages, models, rivals, sources, prompts × answers) visible, plus KPI row, weekly chart, queries/pages and ranks when Google is connected
 - [ ] brand colours applied; favicon recoloured; no leftover names of another brand anywhere on the page
 - [ ] live URL returns the new build (curl check), access protected if it is a client
@@ -155,6 +162,7 @@ while the Claude app is open. Any other scheduler (cron, CI) can run the same co
 | `scripts/dfs.py`, `scripts/aggregate.py` | DataForSEO transport and answer parsing; the numbers of a run |
 | `scripts/diagnose.py` | why each prompt was lost, which sources to go after (free) |
 | `scripts/recommend.py` | «Що робити» rows from the diagnosis and the search data, each tied to a number |
+| `scripts/check_dashboard.py` | the self-check every build runs (also a CLI with `--selftest`) |
 | `scripts/inject_dashboard.py` | config-driven: pulls OpenSEO (MCP over HTTP), AI-mode JSON, the run folder; rewrites the page in place |
 | `scripts/gsc_mcp_server.py` | direct Search Console MCP (service account) and CLI |
 | `scripts/import_gsc_ai.py` | Search Console AI-mode export (ZIP/CSV, localized headers) -> JSON |

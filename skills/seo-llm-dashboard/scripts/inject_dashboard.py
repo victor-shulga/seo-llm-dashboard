@@ -432,6 +432,7 @@ def main():
                      src, count=1, flags=re.S)
         PAGE.write_text(chrome(src, seo), encoding="utf-8")
         print("demo page ->", PAGE)
+        self_check()
         return
     # AI-only mode: a config without "openseo" skips Search Console, rank tracking and AI mode
     days, gsc_data = {}, None
@@ -476,6 +477,17 @@ def main():
     else:
         print("AI Visibility Score: no finalized run, section hidden")
     print("->", PAGE)
+    self_check()
+
+
+def self_check():
+    """Every build ends with check_dashboard.py; a failed check exits 1 instead of shipping a broken page."""
+    sys.path.insert(0, str(HERE))
+    import check_dashboard
+    bad = check_dashboard.problems(PAGE.read_text(encoding="utf-8"), CFG)
+    check_dashboard.report(bad, PAGE)
+    if bad:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

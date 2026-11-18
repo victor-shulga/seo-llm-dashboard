@@ -28,16 +28,20 @@ Fill every field of `dashboard.config.example.json`:
   brand's positive colour; never the same as accent).
 - `geo.audience` = the buyer in 3-5 words, shown under the section title. `geo.country_note` = one sentence
   on how the country was set per model, or null.
-- UI language of the template is Ukrainian. For another language translate the static labels in
-  `dashboard.html` once and keep that copy as the client's template.
+- UI language of the template is Ukrainian. The design is fixed: never edit, translate or "improve" the
+  HTML/CSS/JS by hand. The build ends with `check_dashboard.py`, which rejects an edited page.
 
 ## Inject
 
 ```bash
 python3 <skill>/scripts/inject_dashboard.py <dashboard-dir>/dashboard.config.json
 ```
-Prints one line per source. Sections without data hide themselves: no rank tracker -> no ranks section,
-no ai_mode_file -> no AI-mode section, no finalized run -> no AI Visibility Score.
+Prints one line per source, then the self-check (`scripts/check_dashboard.py`): data parses, every block of
+the template is there, AI score / models / rivals / sources / prompts × answers / «Що робити» present, Google
+sections only when configured, no placeholders, no external files or fetch (Google Fonts allowed), no ISO
+week labels, no retired beige colours. Exit 1 = report its message to the user and fix the cause (config,
+run folder, recommend.py); never hand-patch the HTML. Sections without data hide themselves: no rank
+tracker -> no ranks section, no ai_mode_file -> no AI-mode section, no finalized run -> no AI block.
 
 ## Preview and verify (before every deploy)
 
