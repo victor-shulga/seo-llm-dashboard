@@ -34,6 +34,8 @@ from collections import defaultdict
 from datetime import date
 
 HERE = pathlib.Path(__file__).resolve().parent
+TEMPLATE = HERE.parent / "templates/dashboard.html"
+VIEWPORT = '<meta name="viewport" content="width=device-width,initial-scale=1">'
 CFG_PATH = pathlib.Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) > 1 else HERE / "dashboard.config.json"
 CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))
 BASE = CFG_PATH.parent
@@ -210,6 +212,17 @@ def ai_mode(days):
 
 
 # ── AI Visibility Score (ai-visibility-report run) ─────────────────────────────
+def diagnosis():
+    """Latest output of ai-visibility-report/scripts/diagnose.py; can be a newer month than the score."""
+    files = sorted(GEO_RUNS.glob("*_ai_visibility_*_diagnosis.json"))
+    if not files:
+        return None
+    d = json.loads(files[-1].read_text(encoding="utf-8"))
+    return {"period": d["period"], "comparedWith": d.get("compared_with"), "summary": d["summary"],
+            "prompts": d["prompts"], "domains": d["domains"][:12],
+            "contest": [s for s in d["sources"] if s["type"] == "CONTEST"]}
+
+
 def geo():
     """Score, per language, vs competitors, computed from the run's cells.
 
@@ -307,8 +320,41 @@ def geo():
             doms[d[4:] if d.startswith("www.") else d] += 1
     sources = sorted(doms.items(), key=lambda kv: (-kv[1], kv[0]))[:10]
 
+    # every prompt with each model's own answer: what the buyer actually reads, and who it names
+    raw_key = lambda label: {"ChatGPT": "chat_gpt"}.get(label.split()[0], label.split()[0].lower())
+    old_rx = re.compile(CFG["old_brand_regex"], re.I) if CFG.get("old_brand_regex") else None
+    comp_name = {c["domain"]: c["name"] for c in cfg.get("competitors", [])}
+    by_pc = {(c["prompt_id"], c["model"]): c for c in cells}
+    # avr.py moves raw/ to raw_<old month> when a new collect starts, so a finished month may live there
+    raw_dir = GEO_RUNS / f"raw_{slug_of(runs[-1])}"
+    raw_dir = raw_dir if raw_dir.exists() else GEO_RUNS / "raw"
+    answers = []
+    for p in cfg["prompts"]:
+        row = []
+        for m in cfg["llms_covered"]:
+            c = by_pc.get((p["id"], m["label"])) or {}
+            f = raw_dir / f"{p['id']}__{m.get('llm_type') or raw_key(m['label'])}.json"
+            if c.get("status") != "measured" or not f.exists():
+                row.append({"model": short(m["label"])[0], "ok": False})
+                continue
+            text = json.loads(f.read_text(encoding="utf-8")).get("text") or ""
+            text = re.sub(r"\[([^\]]*)\]\([^)]*\)", r"\1", text)          # markdown links -> their label
+            text = re.sub(r"\s*\(?\[\d+\]\)?", "", text)                      # [1] citation markers
+            text = re.sub(r"\*\*|__", "", re.sub(r"(?m)^#{1,6}\s*", "", text))  # bold and headings: plain text
+            if old_rx:
+                text = old_rx.sub("[старий бренд]", text)
+            row.append({"model": short(m["label"])[0], "ok": True,
+                        "named": bool(c.get("brand_mention")), "cited": bool(c.get("brand_citation")),
+                        "first": c.get("prominence") == "Named first",
+                        "rivals": [comp_name.get(d, d) for d in c.get("competitor_mentions") or []],
+                        "sources": sorted({s["domain"].removeprefix("www.") for s in c.get("cited_sources") or []})[:10],
+                        # shortcut: answers cut at 2 500 chars to keep the page light; raise if readers ask for full text
+                        "text": text[:2500] + ("…" if len(text) > 2500 else "")})
+        answers.append({"id": p["id"], "text": p["text"], "lang": p.get("lang"), "branded": p["branded"], "models": row})
+
     notes = json.loads(GEO_NOTES.read_text(encoding="utf-8")) if GEO_NOTES and GEO_NOTES.exists() else {}
     return {
+        "byPrompt": answers,
         "measuredAt": cfg["date_generated"],
         "prompts": len(cfg["prompts"]), "models": len(cfg["llms_covered"]), "answers": len(ok),
         "failed": len(cells) - len(ok),
@@ -317,6 +363,7 @@ def geo():
         "branded": {"hit": sum(1 for c in br if me_m(c)), "of": len(br)},
         "rivals": rivals, "byModel": models,
         "sources": [[d, n, d == cfg["brand_domain"]] for d, n in sources],
+        "diagnosis": diagnosis(),
         "notesFor": notes.get("forRun"),
         "actions": notes.get("actions", []),
     }
@@ -336,24 +383,40 @@ def chrome(src, seo):
     title = CFG.get("title", "Пошук і LLM")
     src = re.sub(r"<title>[^<]*</title>", f"<title>{e(title)}</title>", src, count=1)
     src = re.sub(r"<h1>[^<]*</h1>", f"<h1>{e(CFG.get('h1', title))}</h1>", src, count=1)
-    g = seo["gsc"]
+    g = seo.get("gsc")
+    data = f' · дані з {g["since"]} · {g["last28"]["clicks"]} кліків за 28 днів' if g else ""
     src = re.sub(r'<p class="eyebrow">[^<]*</p>',
-                 f'<p class="eyebrow">{e(CFG.get("brand_name", OWN))} · {e(OWN)} · дані з {g["since"]}'
-                 f' · {g["last28"]["clicks"]} кліків за 28 днів · оновлено {seo["builtAt"]}</p>', src, count=1)
+                 f'<p class="eyebrow">{e(CFG.get("brand_name", OWN))} · {e(OWN)}{data}'
+                 f' · оновлено {seo["builtAt"]}</p>', src, count=1)
+    # tabs: inline list in the config, or "tabs_file" = one JSON list shared by every report page on the
+    # host (so this page can never drift from its siblings); "current_tab" = this page's href.
     tabs = CFG.get("tabs") or []
+    if CFG.get("tabs_file"):
+        cur = CFG.get("current_tab")
+        tabs = [dict(t, current=t["href"] == cur) for t in json.loads(rel(CFG["tabs_file"]).read_text(encoding="utf-8"))]
     nav = ('<nav class="tabs" aria-label="Репорти">' + "".join(
         f'<a href="{e(t["href"])}"' + (' aria-current="page"' if t.get("current") else "") + f'>{e(t["label"])}</a>'
         for t in tabs) + "</nav>") if tabs else '<nav class="tabs" aria-label="Репорти" hidden></nav>'
     src = re.sub(r'<nav class="tabs".*?</nav>', nav, src, count=1, flags=re.S)
-    parts = ["Джерела: Search Console і rank tracking — self-hosted OpenSEO"]
+    parts = ["Search Console і rank tracking — self-hosted OpenSEO"] if g else []
     if seo.get("ai"):
         parts.append("AI-режим Google — ручний експорт звіту «Функції на основі генеративного ШІ» (API його не віддає)")
     if seo.get("geo"):
         parts.append("AI Visibility Score — прогін ai-visibility-report (DataForSEO, живі відповіді моделей)")
+    parts = ["Джерела: " + " · ".join(parts)] if parts else []
     parts.append(f"оновлено {seo['builtAt']}")
     src = re.sub(r"<footer>.*?</footer>", "<footer>" + " · ".join(e(p) for p in parts) + "</footer>",
                  src, count=1, flags=re.S)
     src = re.sub(r"/\*__BRAND__\*/.*?/\*__/BRAND__\*/", lambda m: brand_css(), src, count=1, flags=re.S)
+    # the page is rewritten in place, so a copy made from an older template keeps its old <head>:
+    # make sure the phone basics are there (missing viewport = desktop layout zoomed out on phones)
+    if 'name="viewport"' not in src:
+        src = re.sub(r'(<meta charset="utf-8">)', r"\1\n" + VIEWPORT, src, count=1, flags=re.I)
+    if 'id="mobile-guard"' not in src:
+        guard = re.search(r'<style id="mobile-guard">.*?</style>', TEMPLATE.read_text(encoding="utf-8"), re.S)
+        i = src.find('<div class="wrap">')
+        if guard and i >= 0:
+            src = src[:i] + guard.group(0) + "\n" + src[i:]
     return src
 
 
@@ -370,8 +433,11 @@ def main():
         PAGE.write_text(chrome(src, seo), encoding="utf-8")
         print("demo page ->", PAGE)
         return
-    connect()
-    days, gsc_data = search_console()
+    # AI-only mode: a config without "openseo" skips Search Console, rank tracking and AI mode
+    days, gsc_data = {}, None
+    if OSEO:
+        connect()
+        days, gsc_data = search_console()
     seo = {
         "meta": {
             "domain": OWN, "brand": CFG.get("brand_name", OWN),
@@ -381,7 +447,7 @@ def main():
         },
         "gsc": gsc_data,
         "ai": ai_mode(days),
-        "ranks": rank_tracking() if OSEO.get("rank_tracking", True) else None,
+        "ranks": rank_tracking() if OSEO and OSEO.get("rank_tracking", True) else None,
         "geo": geo(),
         "builtAt": date.today().isoformat(),
     }
@@ -394,16 +460,18 @@ def main():
 
     g, r, a, gv = seo["gsc"], seo["ranks"], seo["ai"], seo["geo"]
     print(f"GSC {g['since']}..{g['until']}: 28 days {g['last28']['clicks']} clicks /"
-          f" {g['last28']['imp']} impressions · CTR {g['last28']['ctr']}% · position {g['last28']['pos']}")
+          f" {g['last28']['imp']} impressions · CTR {g['last28']['ctr']}% · position {g['last28']['pos']}"
+          if g else "GSC: no openseo in the config, search sections hidden (AI-only mode)")
     print(f"ranks: {r['top10']} of {len(r['rows'])} keywords in top 10 · AI Overview on {r['aioShare']}%"
-          f" · competitors {len(r['competitors'])}" if r else "ranks: no tracker for the own domain, section hidden")
+          f" · competitors {len(r['competitors'])}" if r else
+          "ranks: no tracker for the own domain, section hidden" if OSEO else "ranks: skipped (AI-only mode)")
     print(f"AI mode: {a['total']['imp']} impressions, share {a['share']}%" if a else "AI mode: no file, section hidden")
     if gv:
         t = gv["total"]
         print(f"AI Visibility Score {gv['measuredAt']}: {t['score']}/100 · unbranded {t['hit']} of {t['of']} · "
               + ", ".join(f"{l} {v['score']}" for l, v in gv["byLang"].items())
               + f" · branded {gv['branded']['hit']} of {gv['branded']['of']} · failed {gv['failed']}")
-        if gv["notesFor"] != gv["measuredAt"]:
+        if GEO_NOTES and gv["notesFor"] != gv["measuredAt"]:
             print(f"  ! actions in the notes file are for run {gv['notesFor']}, numbers are {gv['measuredAt']}: rewrite them")
     else:
         print("AI Visibility Score: no finalized run, section hidden")

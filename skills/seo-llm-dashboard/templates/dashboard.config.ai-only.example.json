@@ -1,0 +1,13 @@
+{
+  "page": "dashboard.html",
+  "domain": "example.com",
+  "brand_name": "Example",
+  "title": "AI-видимість · Example",
+  "h1": "AI-видимість",
+  "old_brand_regex": null,
+  "geo": {
+    "run_dir": "../ai-visibility/runs/example.com-ua",
+    "notes_file": "seo_geo.json"
+  },
+  "colors": {}
+}

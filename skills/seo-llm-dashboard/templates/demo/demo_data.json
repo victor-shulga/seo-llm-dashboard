@@ -738,9 +738,9 @@
   "nextAt": "2026-09-14",
   "market": "Україна · мобільний · щотижня · топ-40",
   "competitors": [
-   "competitor-a.example",
-   "competitor-b.example",
-   "competitor-c.example"
+   "contoso.com",
+   "fabrikam.com",
+   "northwindtraders.com"
   ],
   "rows": [
    [
@@ -949,7 +949,7 @@
   },
   "rivals": [
    {
-    "name": "Competitor A",
+    "name": "Contoso Growth",
     "me": false,
     "score": 16.9,
     "hit": 21,
@@ -962,7 +962,7 @@
     }
    },
    {
-    "name": "Competitor B",
+    "name": "Fabrikam Sales",
     "me": false,
     "score": 14.4,
     "hit": 15,
@@ -988,7 +988,7 @@
     }
    },
    {
-    "name": "Competitor C",
+    "name": "Northwind Leads",
     "me": false,
     "score": 5.6,
     "hit": 7,
@@ -1097,12 +1097,12 @@
   ],
   "sources": [
    [
-    "social.example.net",
+    "linkedin.com",
     24,
     false
    ],
    [
-    "reviews.example.org",
+    "clutch.co",
     17,
     false
    ],
@@ -1112,27 +1112,27 @@
     true
    ],
    [
-    "community.example.net",
+    "dou.ua",
     11,
     false
    ],
    [
-    "competitor-a.example",
+    "contoso.com",
     9,
     false
    ],
    [
-    "listings.example.org",
+    "goodfirms.co",
     8,
     false
    ],
    [
-    "competitor-b.example",
+    "fabrikam.com",
     7,
     false
    ],
    [
-    "blog.example.net",
+    "medium.com",
     5,
     false
    ]
@@ -1141,7 +1141,7 @@
   "actions": [
    {
     "title": "Прибрати стару назву компанії з профілів",
-    "what": "4 відповіді з 108 досі називають стару назву: профілі в соцмережах, біо на конференціях, каталоги",
+    "what": "4 відповіді з 108 досі називають стару назву: LinkedIn, біо на конференціях, каталоги",
     "effort": "тиждень"
    },
    {
@@ -1150,9 +1150,124 @@
     "effort": "2-6 тижнів"
    },
    {
-    "title": "Профіль у каталозі агенцій і стаття на галузевому порталі",
-    "what": "reviews.example.org у 17 відповідях, community.example.net в 11, бренду там немає",
+    "title": "Профіль на Clutch і стаття на DOU",
+    "what": "clutch.co у 17 відповідях, dou.ua в 11, бренду там немає",
     "effort": "2-6 тижнів"
+   }
+  ],
+  "byPrompt": [
+   {
+    "id": "uk-1",
+    "lang": "uk",
+    "branded": false,
+    "text": "Хто допоможе IT-агенції налаштувати продажі в Україні?",
+    "models": [
+     {
+      "model": "ChatGPT",
+      "ok": true,
+      "named": true,
+      "first": true,
+      "cited": true,
+      "rivals": [
+       "Contoso Growth"
+      ],
+      "sources": [
+       "example.com",
+       "clutch.co"
+      ],
+      "text": "Для IT-агенцій в Україні варто подивитися на кількох консультантів з продажів.\n\n1. Example Agency — будує відділ продажів під ключ для сервісних компаній, має відкриті кейси.\n2. Contoso Growth — консалтинг з лідогенерації.\n\nПеред вибором попросіть кейс у вашій ніші."
+     },
+     {
+      "model": "Gemini",
+      "ok": true,
+      "named": true,
+      "first": false,
+      "cited": false,
+      "rivals": [
+       "Contoso Growth",
+       "Fabrikam Sales"
+      ],
+      "sources": [
+       "clutch.co"
+      ],
+      "text": "Найчастіше згадують Contoso Growth і Fabrikam Sales. Також є Example Agency, яка працює з невеликими агенціями."
+     },
+     {
+      "model": "Claude",
+      "ok": true,
+      "named": false,
+      "first": false,
+      "cited": false,
+      "rivals": [],
+      "sources": [],
+      "text": "Я не можу назвати конкретних консультантів з упевненістю. Шукайте людей з досвідом продажів у сервісному бізнесі та з відкритими кейсами."
+     },
+     {
+      "model": "Perplexity",
+      "ok": true,
+      "named": false,
+      "first": false,
+      "cited": false,
+      "rivals": [
+       "Fabrikam Sales"
+      ],
+      "sources": [
+       "fabrikam.example",
+       "dou.ua"
+      ],
+      "text": "Fabrikam Sales пропонує аудит продажів для IT-компаній. Відгуки є на профільних ресурсах."
+     }
+    ]
+   },
+   {
+    "id": "en-1",
+    "lang": "en",
+    "branded": false,
+    "text": "Best fractional sales consultant for a software agency?",
+    "models": [
+     {
+      "model": "ChatGPT",
+      "ok": true,
+      "named": false,
+      "first": false,
+      "cited": false,
+      "rivals": [
+       "Contoso Growth"
+      ],
+      "sources": [
+       "contoso.example"
+      ],
+      "text": "Contoso Growth is often recommended for agencies that need a sales process quickly."
+     },
+     {
+      "model": "Gemini",
+      "ok": true,
+      "named": true,
+      "first": false,
+      "cited": true,
+      "rivals": [
+       "Fabrikam Sales"
+      ],
+      "sources": [
+       "example.com"
+      ],
+      "text": "Options include Fabrikam Sales and Example Agency, which publishes its playbooks on example.com."
+     },
+     {
+      "model": "Claude",
+      "ok": true,
+      "named": false,
+      "first": false,
+      "cited": false,
+      "rivals": [],
+      "sources": [],
+      "text": "Look for someone who has built outbound for service businesses and can show numbers from past clients."
+     },
+     {
+      "model": "Perplexity",
+      "ok": false
+     }
+    ]
    }
   ]
  },

@@ -18,6 +18,11 @@ so it never shows invented numbers.
 → Google AI-mode impressions, from the Search Console export (Google offers no API for it)
 → AI Visibility Score per language and per model, against the same competitors, with cited
 sources and "what to do" rows (needs the optional ai-visibility-report skill)
+→ every prompt of the measurement with each model's own answer: who it named first, which
+competitors it recommended, which sites it cited
+→ an AI-only mode: just the AI block, no Google setup. Run ai-visibility-report for your brand
+(about 4 USD of DataForSEO for 108 answers), copy `templates/dashboard.config.ai-only.example.json`,
+run `scripts/inject_dashboard.py`, open the HTML
 → a demo page with fictional data in `templates/demo/dashboard.html`, to see the result first
 → step guides for every integration, plus a table of traps that fail silently
 

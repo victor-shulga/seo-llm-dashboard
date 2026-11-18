@@ -103,8 +103,9 @@ footer code{font-family:var(--mono);font-size:11.5px;color:var(--body)}
 .empty{padding:26px;text-align:center;color:var(--muted);font-size:14px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
-/* вкладки між сусідніми репортами на тому ж хості (config: tabs) */
-.tabs{display:flex;gap:6px;margin:0 0 18px}
+/* вкладки між сусідніми репортами на тому ж хості (config: tabs або tabs_file) */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.tabs a{white-space:nowrap}
 .tabs a{font-family:var(--text);font-size:13.5px;padding:7px 14px;border:1px solid var(--line);
   border-radius:4px;text-decoration:none;color:var(--body);background:var(--paper)}
 .tabs a[aria-current="page"]{background:var(--ink);color:#fff;border-color:var(--ink);font-weight:600}
@@ -124,13 +125,25 @@ footer code{font-family:var(--mono);font-size:11.5px;color:var(--body)}
 /* рівно 2×2: при 4 в ряд колонка ~280px, і довгий підпис («Реферальні виплати»)
    зʼїдає весь бар */
 .split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.split3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:14px}
+@media (max-width:1180px){.split3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.split3{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:760px){.split{grid-template-columns:1fr}}
+.ans-hit{font-weight:700;color:var(--ink)}.ans-first{font-weight:700;color:var(--coral-deep)}.ans-no{color:var(--muted)}
+#geoAns tr.q{cursor:pointer}#geoAns tr.q:hover td{background:var(--paper)}#geoAns tr.q[aria-expanded=true] td{background:var(--paper)}
+.ans-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:6px 0 10px}
+.ans-card{border:1px solid var(--line);border-radius:4px;background:var(--paper);padding:10px 12px;min-width:0}
+.ans-card h4{margin:0 0 6px;font-family:var(--display);font-size:13px;color:var(--ink)}
+.ans-card .txt{white-space:pre-wrap;font-size:12.5px;line-height:1.45;max-height:260px;overflow:auto;color:var(--body)}
+.ans-card .meta{font-size:12px;color:var(--muted);margin-top:6px}
+@media(max-width:700px){.ans-grid{grid-template-columns:minmax(0,1fr)}}
 .mini{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px 16px}
 .mini h3{font-family:var(--display);font-weight:700;font-size:14px;color:var(--ink);margin:0 0 10px}
 /* лідерборд «кого рекомендують»: рядок = місце · імʼя · смуга · у скількох відповідях */
 .lb{display:flex;flex-direction:column;gap:7px}
 .lb-row{display:grid;grid-template-columns:22px minmax(0,1fr) 38%;align-items:center;gap:10px;font-size:13px}
 .lb-row .r{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:right}
+.split3 .lb-row{grid-template-columns:22px minmax(0,1fr) 34%}.split3 .lb-row .nm small{white-space:normal}
 .lb-row .nm{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-row .nm small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
 .lb-row .bar{position:relative;height:18px;background:#EFEDE8;border-radius:2px}
@@ -158,14 +171,14 @@ footer code{font-family:var(--mono);font-size:11.5px;color:var(--body)}
 td.z{color:var(--neutral)}
 </style>
 <style id="mobile-guard">
-  .kpis>*,.grid2>*,.grid3>*,.split>*,.panel,.kpi,.card{min-width:0}
+  .kpis>*,.grid2>*,.grid3>*,.split>*,.split3>*,.panel,.kpi,.card{min-width:0}
   .panel svg,.panel canvas,.panel img,.card svg,.card canvas,.card img{max-width:100%}
   .tbl-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
   @media (max-width:1024px){
     .panel table,.card table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
   }
   @media (max-width:760px){
-    .grid2,.grid3,.split{grid-template-columns:minmax(0,1fr)!important}
+    .grid2,.grid3,.split,.split3{grid-template-columns:minmax(0,1fr)!important}
     .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
     .filters{flex-wrap:wrap}
     .filters select,.filt select{min-width:0;max-width:100%}
@@ -251,14 +264,24 @@ td.z{color:var(--neutral)}
   </div>
   <div class="geo-langs" id="geoLangs"></div>
   <div class="mini" id="geoTrendBox"><h3>Бал від заміру до заміру</h3><div class="grp" style="margin:0 0 8px"><button class="chip" data-trend="rivals" aria-pressed="true">Конкуренти</button><button class="chip" data-trend="lang" aria-pressed="false">По мовах</button></div><div class="scroll"><div id="geoTrend"></div></div><p class="note" id="geoTrendNote"></p></div>
-  <div class="split">
+  <div class="split3">
     <div class="mini"><h3>Бал проти конкурентів</h3><div id="geoRivals"></div></div>
     <div class="mini"><h3>По моделях</h3><div class="scroll"><table id="geoModels"></table></div></div>
-  </div>
-  <div class="split">
     <div class="mini"><h3>Кого цитують як джерело</h3><div id="geoSources"></div></div>
-    <div class="mini"><h3>Що робити</h3><div class="scroll"><table id="geoActions"></table></div></div>
   </div>
+  <div class="mini" style="margin-top:14px"><h3>Що робити</h3><div class="scroll"><table id="geoActions"></table></div></div>
+  <div class="mini" id="geoDiagBox" hidden><h3>Чому не назвали: кожен промпт</h3>
+    <p class="note">Причина одна на промпт, найпростіша до виправлення зверху. «Сторінка є, імені нема»: своя сторінка на тему цією мовою є і в індексі, але відповідь нас не називає. «Сторінки нема»: на тему цією мовою окремої сторінки нема, навіть якщо є іншою мовою. «Частина моделей»: хтось уже називає. Рахуємо лише небрендові питання.</p>
+    <div class="sub" id="geoDiagSub" style="margin-bottom:10px"></div>
+    <div class="scroll"><table id="geoDiag"></table></div></div>
+  <div class="mini" id="geoDiagSrcBox" hidden><h3>Куди йти: джерела, які цитують у програних відповідях</h3>
+    <p class="note">Домени відсортовані за кількістю програних промптів, де їх цитують. Тип за адресою і прочитаним текстом сторінки. Сторінки, які не вдалося прочитати (LinkedIn, Clutch), лишаються за типом адреси: чи є там ваш профіль, скрипт не знає.</p>
+    <div class="sub" id="geoDiagSrcSub" style="margin-bottom:10px"></div>
+    <div class="scroll"><table id="geoDiagSrc"></table></div></div>
+  <div class="mini" id="geoAnsBox" hidden><h3>Промпти й відповіді моделей</h3>
+    <p class="note">Кожне питання заміру і що на нього відповіла кожна модель. «1-й» = назвала вас першою, «так» = назвала, «—» = не назвала. Натисніть рядок, щоб прочитати відповіді, кого вони радять і на які сайти посилаються.</p>
+    <div class="grp" id="geoAnsLangs" style="margin:0 0 10px"></div>
+    <div class="scroll"><table id="geoAns"></table></div></div>
   <p class="note" id="geoNote"></p>
 </section>
 
@@ -294,8 +317,16 @@ function row(label, value, cls, flag){
        + `<span class="num">${value}</span></div>`;
 }
 
+// секція і лінія над нею ховаються разом, інакше в режимі «лише AI» лишаються подвійні лінії
+function hideSec(sec, hide){
+  sec.hidden = hide;
+  const hr = sec.previousElementSibling;
+  if (hr && hr.tagName === "HR") hr.hidden = hide;
+}
+
 function renderKpis(){
-  const g = SEO.gsc, r = SEO.ranks || {top10: 0, rows: [], aioShare: 0, checkedAt: null};
+  const g = SEO.gsc || {last28:{clicks:0, imp:0, ctr:0, pos:0}, countries:[], queries:[]};
+  const r = SEO.ranks || {top10: 0, rows: [], aioShare: 0, checkedAt: null};
   const cur = g.last28, prev = g.prev28 || {clicks:0, imp:0, ctr:0, pos:0};
   const [cCls, cTxt] = delta(cur.clicks, prev.clicks);
   const [iCls, iTxt] = delta(cur.imp, prev.imp);
@@ -303,7 +334,7 @@ function renderKpis(){
   const [ctrCls, ctrTxt] = delta(cur.ctr, prev.ctr);
   const top = g.countries[0] || ["—", 0, 0];
   const cards = [
-    {k:"Кліки 28 днів", v:fmtNum(cur.clicks), c:"c", rows:[
+    ...(!SEO.gsc ? [] : [{k:"Кліки 28 днів", v:fmtNum(cur.clicks), c:"c", rows:[
       row("попередні 28", fmtNum(prev.clicks), cCls, cTxt),
       row("CTR", cur.ctr + "%", ctrCls, ctrTxt),
       row("гео", `${top[0].toUpperCase()} · ${top[1]} кліків з ${g.countries.length} країн`),
@@ -312,7 +343,7 @@ function renderKpis(){
       row("попередні 28", fmtNum(prev.imp), iCls, iTxt),
       row("середня позиція", cur.pos, pCls, pTxt),
       row("запитів", g.queries.length + " з показами"),
-    ]},
+    ]}]),
     ...(!SEO.ranks ? [] : [{k:"Позиції", v:r.top10 + " у топ-10", rows:[
       row("ключів у трекінгу", r.rows.length),
       row("AI Overview", r.aioShare + "% видач"),
@@ -331,6 +362,8 @@ function renderKpis(){
 
 // ---- тижневий бар-чарт: даних мало, тому крок тиждень, а не місяць
 function renderChart(){
+  hideSec(document.getElementById("chart").closest("section"), !SEO.gsc);
+  if (!SEO.gsc) return;
   const weeks = Object.entries(SEO.gsc.weeks).slice(-16);
   const host = document.getElementById("chart");
   if (!weeks.length) { host.innerHTML = '<div class="empty">немає даних</div>'; return; }
@@ -379,6 +412,8 @@ function table(hostId, head, rows, cols){
 
 function renderQueries(){
   const g = SEO.gsc;
+  hideSec(document.getElementById("queries").closest("section"), !g);
+  if (!g) return;
   table("queries",
     "<th>Запит</th><th class=n>Показів</th><th class=n>Кліків</th><th class=n>Позиція</th>",
     g.queries3m.slice(0,12).map(([q,c,i,ctr,pos]) =>
@@ -405,7 +440,7 @@ function renderQueries(){
 function renderRanks(){
   const r = SEO.ranks;
   const sec = document.getElementById("ranks").closest("section");
-  sec.hidden = !r; if (sec.previousElementSibling && sec.previousElementSibling.tagName === "HR") sec.previousElementSibling.hidden = !r;
+  hideSec(sec, !r);
   if (!r) return;
   const short = d => d.replace(/^www\./, "").replace(/\.(com\.ua|com|ua)$/, "");
   const head = "<th>Ключ</th><th class=n>Ми</th><th class=n>Зміна</th><th>Сторінка</th>"
@@ -433,8 +468,8 @@ function renderRanks(){
 function renderAi(){
   const a = SEO.ai;
   const sec = document.getElementById("aiSec");
-  if (!a || !a.total || !a.total.imp) return;
-  sec.hidden = false;
+  hideSec(sec, !a || !a.total || !a.total.imp);
+  if (sec.hidden) return;
 
   const t = a.total, w = a.web || {clicks:0, imp:0};
   const cards = [
@@ -523,6 +558,34 @@ function donut(score, size){
     + ` font-size="${size*0.075}" fill="#6C6A64">зі 100</text></svg>`;
 }
 
+
+// ---- промпти × моделі: що саме відповіла кожна модель
+let ansLang = null;
+function renderAnswers(){
+  const g = SEO.geo; if (!g || !g.byPrompt || !g.byPrompt.length) return;
+  const box = document.getElementById("geoAnsBox"); box.hidden = false;
+  const langs = [...new Set(g.byPrompt.map(p => p.lang).filter(Boolean))];
+  if (ansLang === null) ansLang = langs[0] || "";
+  const H = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  document.getElementById("geoAnsLangs").innerHTML = langs.length > 1 ? langs.map(l =>
+    `<button class="chip" data-al="${l}" aria-pressed="${l === ansLang}">${LANG[l] || l}</button>`).join(" ") : "";
+  document.querySelectorAll("#geoAnsLangs [data-al]").forEach(b => b.onclick = () => { ansLang = b.dataset.al; renderAnswers(); });
+  const models = g.byPrompt[0].models.map(m => m.model);
+  const mark = m => !m.ok ? `<span class="ans-no">н/в</span>` : m.first ? `<span class="ans-first">1-й</span>` : m.named ? `<span class="ans-hit">так</span>` : `<span class="ans-no">—</span>`;
+  const rows = g.byPrompt.filter(p => !ansLang || p.lang === ansLang).map((p, i) => {
+    const cards = p.models.map(m => `<div class="ans-card"><h4>${H(m.model)} · ${mark(m)}${m.cited ? " · сайт процитовано" : ""}</h4>`
+      + (m.ok ? `<div class="txt">${H(m.text)}</div><div class="meta">${m.rivals.length ? "Радить також: " + H(m.rivals.join(", ")) + "<br>" : ""}${m.sources.length ? "Джерела: " + H(m.sources.join(", ")) : "Без джерел"}</div>` : `<div class="meta">Відповідь не виміряно</div>`)
+      + `</div>`).join("");
+    return `<tr class="q" data-i="${i}" aria-expanded="false"><td>${H(p.text)}${p.branded ? ' <span class="pill">брендове</span>' : ""}</td>${p.models.map(m => `<td class="n">${mark(m)}</td>`).join("")}</tr>`
+      + `<tr class="a" hidden><td colspan="${models.length + 1}"><div class="ans-grid">${cards}</div></td></tr>`;
+  }).join("");
+  const tb = document.getElementById("geoAns");
+  tb.innerHTML = `<thead><tr><th>Промпт</th>${models.map(m => `<th class=n>${H(m)}</th>`).join("")}</tr></thead><tbody>${rows}</tbody>`;
+  tb.querySelectorAll("tr.q").forEach(r => r.onclick = () => {
+    const a = r.nextElementSibling, open = r.getAttribute("aria-expanded") === "true";
+    r.setAttribute("aria-expanded", String(!open)); a.hidden = open;
+  });
+}
 function renderGeo(){
   const g = SEO.geo;
   if (!g) return;
@@ -578,6 +641,28 @@ function renderGeo(){
       + `<td class="n">${a.effort}</td></tr>`).join(""), 3);
   document.getElementById("geoActions").closest(".mini").hidden = !g.actions.length;
 
+  const dg = g.diagnosis;
+  if (dg) {
+    const RE = {old_brand:["Старий бренд замість імені","c"], missing_page:["Сторінки нема","c"], weak_page:["Сторінка є, імені нема",""], partial:["Частина моделей",""], won:["Названо всюди","f"], not_measured:["Не виміряно",""]};
+    const order = Object.keys(RE);
+    const rows = [...dg.prompts].sort((a,b) => order.indexOf(a.reason) - order.indexOf(b.reason) || a.topic.localeCompare(b.topic));
+    table("geoDiag", "<th>Питання</th><th>Мова</th><th class=n>Названо</th><th>Причина</th><th>Своя сторінка</th><th>Хто з конкурентів</th>",
+      rows.map(r => `<tr><td>${r.text}</td><td>${r.lang}</td>`
+        + `<td class="n">${r.named} з ${r.measured}${dg.comparedWith ? ` <span style="color:var(--muted)">(було ${r.named_prev})</span>` : ""}</td>`
+        + `<td><span class="pill${RE[r.reason][1] === "c" ? " lm" : ""}">${RE[r.reason][0]}</span></td>`
+        + `<td>${r.own_page ? r.own_page.replace(/^https?:\/\/[^/]+/, "") : (r.own_page_other_lang.length ? "лише іншою мовою" : "нема")}</td>`
+        + `<td>${r.rivals.map(x => x[0]).join(", ") || "—"}</td></tr>`).join(""), 6);
+    const S = dg.summary.reasons, n = k => S[k] || 0;
+    document.getElementById("geoDiagSub").textContent = `Замір ${dg.period}: сторінки нема ${n("missing_page")}, сторінка є без імені ${n("weak_page")}, частина моделей ${n("partial")}, старий бренд ${n("old_brand")} із ${dg.prompts.length} промптів`
+      + (dg.period > g.measuredAt.slice(0, 7) ? ` · бал вище ще за ${g.measuredAt}, цей місяць не фіналізовано` : "");
+    const TY = {CLAIM:"Профіль",EARN:"Згадка",CONTEST:"Виправити дані",RIVAL:"Сайт конкурента",OWN:"Свій сайт",HAVE:"Вас уже названо"};
+    table("geoDiagSrc", "<th>Домен</th><th>Тип</th><th class=n>Промптів</th><th class=n>Відповідей</th><th class=n>Сторінок</th>",
+      dg.domains.map(d => `<tr><td>${d.domain}</td><td><span class="pill">${TY[d.type]}</span></td><td class="n">${d.prompts}</td><td class="n">${d.lost_cells}</td><td class="n">${d.pages}</td></tr>`).join(""), 5);
+    document.getElementById("geoDiagSrcSub").textContent = `Виправити застарілі дані: ${[...new Set(dg.contest.map(c => c.domain))].join(", ") || "нема"} · не прочитано ${dg.summary.pages_not_read} сторінок із ${dg.summary.pages_total}`;
+    document.getElementById("geoDiagBox").hidden = false;
+    document.getElementById("geoDiagSrcBox").hidden = false;
+  }
+
   document.getElementById("geoSub").textContent =
     `Замір ${g.measuredAt}${META.audience ? " · " + META.audience : ""} · ${g.prompts} промптів × ${g.models} моделі`
     + ` = ${g.answers} ${plural(g.answers, "відповідь", "відповіді", "відповідей")}`
@@ -588,6 +673,7 @@ function renderGeo(){
     + (META.geoCountryNote ? " " + META.geoCountryNote : "")
     + " Одна відповідь від заміру до заміру плаває, дивитись варто на зміну бала, не на окрему клітинку."
     + (g.notesFor && g.notesFor !== g.measuredAt ? ` Дії написані під прогін ${g.notesFor}, цифри новіші.` : "");
+  renderAnswers();
 }
 
 // ---- динаміка AI Visibility Score: кожен закритий прогін — точка. Колір лише у вас

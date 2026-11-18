@@ -7,10 +7,11 @@ description: >-
   (AI Visibility Score per language vs competitors), optional Google AI-mode export, the single-file
   dashboard page, deploy to Cloudflare Pages or Netlify, and the weekly + monthly scheduled refresh.
   Use when the user says "set up the SEO LLM dashboard", "search and AI visibility dashboard",
-  "connect OpenSEO", "connect Search Console", "connect DataForSEO", "налаштуй SEO і LLM дашборд",
+  "connect OpenSEO", "connect Search Console", "налаштуй SEO і LLM дашборд",
   "дашборд видимості в пошуку і нейромережах", or wants to track a brand in Google and in
-  ChatGPT/Gemini/Claude/Perplexity on one page. The AI block needs the optional ai-visibility-report
-  skill. NOT a one-off PDF report (that is ai-visibility-report) and NOT a site audit.
+  ChatGPT/Gemini/Claude/Perplexity on one page. Also runs AI-only (every prompt with each model's
+  answer, no Google setup) from an ai-visibility-report run, the skill the AI block needs.
+  NOT a one-off PDF report (that is ai-visibility-report), NOT a site audit.
 ---
 
 # SEO + LLM visibility dashboard
@@ -56,6 +57,24 @@ The page UI ships in Ukrainian; translate the static labels once per non-Ukraini
 
 To show what the page looks like, send `templates/demo/dashboard.html` (fictional data). Never link the
 owner's own live report as an example: it sits next to their other reports.
+
+## AI only (no Google, no OpenSEO)
+
+For someone who wants just the answer layer: every prompt, what each model answered, who it named
+and which sites it cited. Needs the ai-visibility-report skill
+(`npx skills add victor-shulga/ai-visibility-report`) and a DataForSEO key, nothing else
+(a 27-prompt x 4-model run is 108 answers, about 4 USD; show the estimate and get a yes first).
+
+1. Run ai-visibility-report for the brand (collect + prominence; the PDF is optional). The run folder
+   holds `<domain>_config.json`, `*_cells.json`, the finalized `*_ai_visibility_<YYYY-MM>.json` and `raw/`.
+2. Copy `templates/dashboard.html`, `templates/favicon.svg` and
+   `templates/dashboard.config.ai-only.example.json` (as `dashboard.config.json`) into one folder; set
+   `domain`, `brand_name`, `geo.run_dir`. Leave out `openseo` and `ai_mode_file`: the search, rank and
+   AI-mode sections then hide themselves. `geo.notes_file` is optional.
+3. `python3 scripts/inject_dashboard.py <folder>/dashboard.config.json`, open `dashboard.html` locally
+   (it is self-contained) or publish it. Re-run after every new measurement.
+
+Steps 1-4, 6 and 8 below are for the full page with Google data.
 
 ## Step 0: intake in ONE message
 
@@ -151,6 +170,7 @@ while the Claude app is open. Any other scheduler (cron, CI) can run the same we
 | `scripts/import_gsc_ai.py` | Search Console AI-mode export (ZIP/CSV, localized headers) -> JSON |
 | `templates/dashboard.html` | the page (single file, data inlined as `const SEO = …;`) |
 | `templates/dashboard.config.example.json` | every config field |
+| `templates/dashboard.config.ai-only.example.json` | the AI-only page: no OpenSEO, no Search Console |
 | `templates/seo_geo.example.json` | "what to do" rows |
 | `templates/scheduled-tasks.md` | weekly + monthly task prompts with placeholders |
 | `templates/serve_preview.py`, `templates/favicon.svg` | local preview, tab icon |
