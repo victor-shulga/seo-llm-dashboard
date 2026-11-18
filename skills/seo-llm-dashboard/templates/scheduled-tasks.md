@@ -68,7 +68,7 @@ CLI: python3 <SKILL_DIR>/scripts/avr.py <command> <DOMAIN>_config.json, run from
    numbers come from the scripts. One answer out of 32 is worth about two points: call a change under one point noise.
 5. (Only if <OWNER> asked for a client PDF:) the ai-visibility-report skill, its `avr.py finalize` on this run folder.
 6. Recommendations (free): in the run folder `python3 <SKILL_DIR>/scripts/diagnose.py <DOMAIN>_config.json`;
-   then cd "<DASHBOARD_DIR>", run inject_dashboard.py dashboard.config.json, `python3 <SKILL_DIR>/scripts/recommend.py
+   then cd "<DASHBOARD_DIR>", run inject_dashboard.py dashboard.config.json --draft, `python3 <SKILL_DIR>/scripts/recommend.py
    dashboard.config.json --write`, read the rows (reword only, numbers stay).
 7. Dashboard: cd "<DASHBOARD_DIR>" && python3 "<SKILL_DIR>/scripts/inject_dashboard.py" dashboard.config.json,
    then <DEPLOY_COMMAND>. Check: curl -s "<LIVE_URL>?nc=$RANDOM" | grep -c "<date_generated>" > 0.

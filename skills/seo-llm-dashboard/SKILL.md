@@ -117,7 +117,7 @@ Own tracker + one tracker per competitor with the same keywords. First check com
 
 Decide market and languages first. Run config with `lang` on every prompt, `avr.py estimate` → show the
 sum → wait for yes → `avr.py collect` → `review` → `prominence.json` → `finalize`. Copy the template,
-fill `dashboard.config.json`, then recommendations (free): `diagnose.py` → `inject_dashboard.py` →
+fill `dashboard.config.json`, then recommendations (free): `diagnose.py` → `inject_dashboard.py --draft` →
 `recommend.py <config> --write` → `inject_dashboard.py` again (`references/04-ai-visibility.md` §6).
 Every «Що робити» row carries a number from the run; never write rows by hand from general advice. Preview via `templates/serve_preview.py`, check console +
 screenshot, publish where the user wants, protect access for clients.

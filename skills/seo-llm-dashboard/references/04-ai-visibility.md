@@ -84,7 +84,7 @@ half-collected run never leaks. Then set `geo.run_dir` in the dashboard config t
 
 ```bash
 cd <run> && python3 <skill-dir>/scripts/diagnose.py <domain>_config.json        # «Чому не назвали» + sources
-python3 <skill-dir>/scripts/inject_dashboard.py <dashboard-dir>/dashboard.config.json  # fresh page data
+python3 <skill-dir>/scripts/inject_dashboard.py <dashboard-dir>/dashboard.config.json --draft  # fresh page data
 python3 <skill-dir>/scripts/recommend.py <dashboard-dir>/dashboard.config.json --write
 python3 <skill-dir>/scripts/inject_dashboard.py <dashboard-dir>/dashboard.config.json  # rows on the page
 ```

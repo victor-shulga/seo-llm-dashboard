@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fill the SEO + LLM visibility dashboard (dashboard.html) with live data.
 
-    python3 inject_dashboard.py [path/to/dashboard.config.json]
+    python3 inject_dashboard.py [path/to/dashboard.config.json] [--draft]
 
 Default config path: dashboard.config.json next to this script. Every path inside the config is
 resolved relative to the config file. With "demo_data" in the config the page is built from that
@@ -36,7 +36,9 @@ from datetime import date
 HERE = pathlib.Path(__file__).resolve().parent
 TEMPLATE = HERE.parent / "templates/dashboard.html"
 VIEWPORT = '<meta name="viewport" content="width=device-width,initial-scale=1">'
-CFG_PATH = pathlib.Path(sys.argv[1]).expanduser().resolve() if len(sys.argv) > 1 else HERE / "dashboard.config.json"
+ARGS = [a for a in sys.argv[1:] if not a.startswith("--")]
+DRAFT = "--draft" in sys.argv     # build before recommend.py: data only, self-check skipped
+CFG_PATH = pathlib.Path(ARGS[0]).expanduser().resolve() if ARGS else HERE / "dashboard.config.json"
 CFG = json.loads(CFG_PATH.read_text(encoding="utf-8"))
 BASE = CFG_PATH.parent
 
@@ -472,7 +474,7 @@ def main():
         print(f"AI Visibility Score {gv['measuredAt']}: {t['score']}/100 · unbranded {t['hit']} of {t['of']} · "
               + ", ".join(f"{l} {v['score']}" for l, v in gv["byLang"].items())
               + f" · branded {gv['branded']['hit']} of {gv['branded']['of']} · failed {gv['failed']}")
-        if GEO_NOTES and gv["notesFor"] != gv["measuredAt"]:
+        if GEO_NOTES and GEO_NOTES.exists() and gv["notesFor"] != gv["measuredAt"]:
             print(f"  ! actions in the notes file are for run {gv['notesFor']}, numbers are {gv['measuredAt']}: rewrite them")
     else:
         print("AI Visibility Score: no finalized run, section hidden")
@@ -482,6 +484,9 @@ def main():
 
 def self_check():
     """Every build ends with check_dashboard.py; a failed check exits 1 instead of shipping a broken page."""
+    if DRAFT:
+        print("чернетка (--draft): перевірку пропущено, далі recommend.py --write і збірка без --draft")
+        return
     sys.path.insert(0, str(HERE))
     import check_dashboard
     bad = check_dashboard.problems(PAGE.read_text(encoding="utf-8"), CFG)
