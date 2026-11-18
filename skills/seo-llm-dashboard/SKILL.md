@@ -3,7 +3,7 @@ name: seo-llm-dashboard
 description: >-
   One skill, one page: how a site is found in Google and named by ChatGPT, Gemini, Claude and
   Perplexity. Measures AI visibility itself through DataForSEO (prompts, live answers, scoring,
-  every answer kept; about 4 USD per 108 answers, shown first and spent only after a yes), then
+  recommendations tied to numbers; about 4 USD per 108 answers, shown first and spent only after a yes), then
   builds a single-file HTML dashboard: AI Visibility Score per language and model vs competitors,
   cited sources, every prompt with each model's answer, plus Search Console clicks and queries,
   rank tracking vs competitors and Google AI-mode when Google is connected (self-hosted OpenSEO on
@@ -109,9 +109,10 @@ Own tracker + one tracker per competitor with the same keywords. First check com
 ## Step 4: first AI measurement and the page (`references/04-ai-visibility.md`, `06-build-and-deploy.md`)
 
 Decide market and languages first. Run config with `lang` on every prompt, `avr.py estimate` → show the
-sum → wait for yes → `avr.py collect` → `review` → `prominence.json` → `finalize`. Then `seo_geo.json`
-(3-4 actions, each with a number from the run), copy the template, fill `dashboard.config.json`, run
-`scripts/inject_dashboard.py <config>`, preview via `templates/serve_preview.py`, check console +
+sum → wait for yes → `avr.py collect` → `review` → `prominence.json` → `finalize`. Copy the template,
+fill `dashboard.config.json`, then recommendations (free): `diagnose.py` → `inject_dashboard.py` →
+`recommend.py <config> --write` → `inject_dashboard.py` again (`references/04-ai-visibility.md` §6).
+Every «Що робити» row carries a number from the run; never write rows by hand from general advice. Preview via `templates/serve_preview.py`, check console +
 screenshot, publish where the user wants, protect access for clients.
 
 ## Step 5: monthly refresh (`templates/scheduled-tasks.md`)
@@ -126,7 +127,7 @@ while the Claude app is open. Any other scheduler (cron, CI) can run the same co
 - [ ] page opens with no console errors; the AI block (score, languages, models, rivals, sources, prompts × answers) visible, plus KPI row, weekly chart, queries/pages and ranks when Google is connected
 - [ ] brand colours applied; favicon recoloured; no leftover names of another brand anywhere on the page
 - [ ] live URL returns the new build (curl check), access protected if it is a client
-- [ ] `seo_geo.json` actions match the latest run (`forRun` = run date)
+- [ ] «Що робити» rows come from `recommend.py` for the latest run (`forRun` = run date), «Чому не назвали» filled by `diagnose.py`
 - [ ] monthly task exists (weekly too with Google), each run once manually
 - [ ] the user got: URL, what each section means in one line each, costs per month, what to do if GSC
       stops (reconnect in OpenSEO)
@@ -152,6 +153,8 @@ while the Claude app is open. Any other scheduler (cron, CI) can run the same co
 |---|---|
 | `scripts/avr.py` | AI measurement CLI: check, estimate, collect, volume, review, finalize, remeasure |
 | `scripts/dfs.py`, `scripts/aggregate.py` | DataForSEO transport and answer parsing; the numbers of a run |
+| `scripts/diagnose.py` | why each prompt was lost, which sources to go after (free) |
+| `scripts/recommend.py` | «Що робити» rows from the diagnosis and the search data, each tied to a number |
 | `scripts/inject_dashboard.py` | config-driven: pulls OpenSEO (MCP over HTTP), AI-mode JSON, the run folder; rewrites the page in place |
 | `scripts/gsc_mcp_server.py` | direct Search Console MCP (service account) and CLI |
 | `scripts/import_gsc_ai.py` | Search Console AI-mode export (ZIP/CSV, localized headers) -> JSON |
@@ -160,7 +163,7 @@ while the Claude app is open. Any other scheduler (cron, CI) can run the same co
 | `templates/dashboard.config.ai-only.example.json` | the AI-only page: no OpenSEO, no Search Console |
 | `templates/ai_run.config.example.json` | the AI measurement run config |
 | `SETUP.uk.md` | the five setup steps for the user, plain Ukrainian |
-| `templates/seo_geo.example.json` | "what to do" rows |
+| `templates/seo_geo.example.json` | the «Що робити» file format (`recommend.py --write` fills it) |
 | `templates/scheduled-tasks.md` | weekly + monthly task prompts with placeholders |
 | `templates/serve_preview.py`, `templates/favicon.svg` | local preview, tab icon |
 | `templates/demo/` | the page with fictional data (Example Agency, example.com): show it before any setup; rebuild with `inject_dashboard.py templates/demo/dashboard.config.json` |

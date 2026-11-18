@@ -7,7 +7,7 @@
   --paper:#FFFFFF;--card:#F7F5F1;--line:#E8E6E1;--line2:#D9D6D0;
   --ink:#161513;--body:#3D3D3A;--muted:#6C6A64;
   --coral:#E85A4F;--coral-deep:#C24235;--coral-soft:#FBEAE8;
-  --forest:#2D5A4A;--forest-soft:#E8F0EC;--neutral:#C9C6BF;
+  --forest:#2D5A4A;--forest-soft:#E8F0EC;--neutral:#7D8A99;
   --display:"Inter Tight","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --text:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
@@ -147,8 +147,9 @@ footer code{font-family:var(--mono);font-size:11.5px;color:var(--body)}
 .lb-row .nm{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lb-row .nm small{display:block;font-size:10.5px;color:var(--muted);font-family:var(--mono)}
 .lb-row .bar{position:relative;height:18px;background:#EFEDE8;border-radius:2px}
-.lb-row .bar i{position:absolute;inset:0 auto 0 0;background:#B9B6AE;border-radius:2px}
+.lb-row .bar i{position:absolute;inset:0 auto 0 0;background:#3D3D3A;border-radius:2px}
 .lb-row .bar b{position:absolute;right:6px;top:0;line-height:18px;font:600 10.5px var(--mono);color:var(--ink)}
+.lb-row .bar{margin-right:40px}.lb-row .bar b{right:-38px}
 .lb-row.me .nm{color:var(--coral-deep);font-weight:600}
 .lb-row.me .bar i{background:var(--coral)}
 .lb-meta{font-size:11.5px;color:var(--muted);margin-top:10px}
@@ -293,7 +294,7 @@ const SEO = {};
 
 const fmtNum = n => Math.round(n).toLocaleString("uk-UA").replace(/,/g," ");
 const CSSV = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const COR = CSSV("--coral") || "#E85A4F", PAST = "#C9C6BF";
+const COR = CSSV("--coral") || "#E85A4F", PAST = "#3D3D3A";
 const INK = CSSV("--ink") || "#161513", COR_DEEP = CSSV("--coral-deep") || "#C24235";
 const META = SEO.meta || {};
 const esc = s => String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -364,6 +365,10 @@ function renderKpis(){
 function renderChart(){
   hideSec(document.getElementById("chart").closest("section"), !SEO.gsc);
   if (!SEO.gsc) return;
+// ключ тижня "2026-W31" -> дата понеділка "27.07" (номери тижнів ISO на екран не виводимо)
+const wkDate = k => { const [y, w] = k.split("-W").map(Number), j4 = new Date(Date.UTC(y, 0, 4));
+  const d = new Date(j4 - ((j4.getUTCDay() || 7) - 1) * 864e5 + (w - 1) * 7 * 864e5);
+  return String(d.getUTCDate()).padStart(2, "0") + "." + String(d.getUTCMonth() + 1).padStart(2, "0"); };
   const weeks = Object.entries(SEO.gsc.weeks).slice(-16);
   const host = document.getElementById("chart");
   if (!weeks.length) { host.innerHTML = '<div class="empty">немає даних</div>'; return; }
@@ -388,17 +393,17 @@ function renderChart(){
     // колір лише для головного: акцент — останній закритий тиждень, решта сірі,
     // незакритий — світліший сірий, щоб не читався як падіння
     const last = i === weeks.length-2;
-    const fill = open ? "#E8E6E1" : last ? COR : PAST;
+    const fill = open ? "rgba(61,61,58,.3)" : last ? COR : PAST;
     g += `<rect x="${x}" y="${y(val)}" width="${bw}" height="${h}" rx="1.5"`
-       + ` fill="${fill}"><title>${wk}: ${fmtNum(val)}${open ? " · тиждень ще не закритий" : ""}</title></rect>`
+       + ` fill="${fill}"><title>тиждень з ${wkDate(wk)}: ${fmtNum(val)}${open ? " · тиждень ще не закритий" : ""}</title></rect>`
        + `<text x="${x+bw/2}" y="${y(val)-6}" text-anchor="middle" font-family="ui-monospace,monospace"`
        + ` font-size="10" font-weight="600" fill="${last ? COR : "#6C6A64"}">${val || ""}</text>`
        + `<text x="${x+bw/2}" y="${H-B+18}" text-anchor="middle" font-family="ui-monospace,monospace"`
-       + ` font-size="9.5" fill="#6C6A64">${wk.slice(5)}</text>`;
+       + ` font-size="9.5" fill="#6C6A64">${wkDate(wk)}</text>`;
   });
   host.innerHTML = g + "</svg>";
   document.getElementById("chartSub").textContent =
-    `${SEO.gsc.since} — ${SEO.gsc.until} · один стовпчик — тиждень (пн–нд), останній ще не закритий`;
+    `${SEO.gsc.since} — ${SEO.gsc.until} · один стовпчик — тиждень, під ним дата понеділка, останній ще не закритий`;
   document.getElementById("chartNote").textContent = mode === "imp"
     ? "Покази: скільки разів сторінки зʼявились у видачі. Ряд короткий — Search Console тримає дані"
       + " лише з моменту підтвердження домену."
@@ -637,7 +642,7 @@ function renderGeo(){
     + `</div><div class="lb-meta">у скількох із ${g.answers} відповідей домен стоїть джерелом (брендові теж)</div>`;
 
   table("geoActions", "<th>Що</th><th>Як</th><th class=n>Скільки</th>",
-    g.actions.map(a => `<tr><td><strong>${a.title}</strong></td><td>${a.what}</td>`
+    g.actions.map(a => `<tr><td>${a.prio ? `<span class="pill${a.prio === "високий" ? " lm" : ""}">${a.prio}</span> ` : ""}<strong>${a.title}</strong></td><td>${a.what}</td>`
       + `<td class="n">${a.effort}</td></tr>`).join(""), 3);
   document.getElementById("geoActions").closest(".mini").hidden = !g.actions.length;
 

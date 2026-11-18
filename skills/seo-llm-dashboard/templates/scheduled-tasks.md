@@ -67,8 +67,9 @@ CLI: python3 <SKILL_DIR>/scripts/avr.py <command> <DOMAIN>_config.json, run from
 4. `avr.py finalize`. It writes <DOMAIN>_ai_visibility_<slug>.json, the file the page reads. Compute nothing by hand:
    numbers come from the scripts. One answer out of 32 is worth about two points: call a change under one point noise.
 5. (Only if <OWNER> asked for a client PDF:) the ai-visibility-report skill, its `avr.py finalize` on this run folder.
-6. Update <NOTES_FILE>: forRun = date_generated from the config, actions = 3-4 rows {"title","what","effort"}
-   in <DASHBOARD_LANGUAGE> for this month's findings. Leave the note field alone.
+6. Recommendations (free): in the run folder `python3 <SKILL_DIR>/scripts/diagnose.py <DOMAIN>_config.json`;
+   then cd "<DASHBOARD_DIR>", run inject_dashboard.py dashboard.config.json, `python3 <SKILL_DIR>/scripts/recommend.py
+   dashboard.config.json --write`, read the rows (reword only, numbers stay).
 7. Dashboard: cd "<DASHBOARD_DIR>" && python3 "<SKILL_DIR>/scripts/inject_dashboard.py" dashboard.config.json,
    then <DEPLOY_COMMAND>. Check: curl -s "<LIVE_URL>?nc=$RANDOM" | grep -c "<date_generated>" > 0.
 8. Summary to <OWNER>, short: score total and per language, change vs last month; which models started or

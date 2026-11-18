@@ -78,12 +78,30 @@ python3 <skill-dir>/scripts/avr.py finalize <config>
 ```
 
 Writes `<domain>_ai_visibility_<slug>.json`. Only months with this file appear on the page, so a
-half-collected run never leaks. Then set `geo.run_dir` in the dashboard config to the run folder and run
-`inject_dashboard.py` (see `06-build-and-deploy.md`).
+half-collected run never leaks. Then set `geo.run_dir` in the dashboard config to the run folder.
 
-"What to do" rows come from `geo.notes_file` (`templates/seo_geo.example.json`), written per run in the
-dashboard language, 3-4 rows, each citing a number from the run; `forRun` = the run's `date_generated`
-(the script warns when they drift apart).
+## 6. Diagnose and recommend (free, after every measurement)
+
+```bash
+cd <run> && python3 <skill-dir>/scripts/diagnose.py <domain>_config.json        # «Чому не назвали» + sources
+python3 <skill-dir>/scripts/inject_dashboard.py <dashboard-dir>/dashboard.config.json  # fresh page data
+python3 <skill-dir>/scripts/recommend.py <dashboard-dir>/dashboard.config.json --write
+python3 <skill-dir>/scripts/inject_dashboard.py <dashboard-dir>/dashboard.config.json  # rows on the page
+```
+
+`diagnose.py` reads the site's sitemap and the third-party pages the models cited in lost answers (plain
+HTTP, cached in `_diagnose_cache.json`, no API spend) and writes `*_diagnosis.json`: per prompt why it was
+lost (no page, page without the name, only some models, old brand) and which sources to go after
+(profile to claim, list to get into, outdated data to fix). Optional `<domain>_diagnose.json` maps each
+topic to a title regex of its dedicated page (`{"topics": {"<keyword>": "<regex>"}, "old_brand_regex": "…"}`);
+without it every topic counts as "no page".
+
+`recommend.py` turns that into 3-6 «Що робити» rows, each with a number from the run, effort and
+priority, plus 1-3 search rows when Search Console / rank data are on the page (a query with 50+
+impressions in the top 10 and CTR under 2%, a keyword at positions 11-20). It writes them to
+`geo.notes_file` with `forRun` = the run's `date_generated`. If the data JSON already carries
+`sections.opportunities` (a run that also went through ai-visibility-report), those rows are used.
+Read the rows; reword one if it reads badly, never change a number, never add a row without one.
 
 ## How the dashboard reads the run
 
