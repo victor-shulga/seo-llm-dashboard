@@ -161,14 +161,18 @@ footer code{font-family:var(--mono);font-size:11.5px;color:var(--body)}
 .geo-card{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:12px 14px;
   display:flex;flex-direction:column;align-items:center;gap:6px}
 #geoTrendBox{margin:10px 0}
-.geo-card.all{border-color:var(--line2);background:var(--paper)}
+.geo-card.all{border-color:#1C2541;background:#1C2541}
+.geo-card.all .k,.geo-card.all .row .lbl{color:rgba(255,255,255,.7)}
+.geo-card.all .row{border-top-color:rgba(255,255,255,.14)}
+.geo-card.all .row .num,.geo-card.all .row .num.f{color:#FFFFFF}
+.geo-card.all .row .num.c{color:#F59E0B}
 .geo-card .k{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);align-self:flex-start}
 .geo-card .facts{width:100%}
 .geo-card .row{display:flex;gap:8px;padding:4px 0;border-top:1px solid var(--line);font-size:12px}
 .geo-card .row .lbl{color:var(--muted)}
 .geo-card .row .num{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--ink);white-space:nowrap}
 .geo-card .row .num.f{color:var(--forest);font-weight:600}
-.geo-card .row .num.c{color:var(--coral-deep);font-weight:600}
+.geo-card .row .num.c{color:#D97706;font-weight:600}
 td.z{color:var(--neutral)}
 </style>
 <style id="mobile-guard">
@@ -550,17 +554,19 @@ const plural = (n, one, few, many) => {
 // відповідях, тому їхні смуги й ваші кільця стоять на одній шкалі 0-100.
 const LANG = {uk: "Українською", ru: "Російською", en: "Англійською"};
 
-function donut(score, size){
+// Arctic Blue (DS 18.11.2026): мови — slate, sky, graphite; «Разом» — navy-картка
+const LANG_ARC = ["#3A506B", "#5BC0DE", "#3D3D3A"];
+function donut(score, size, arc = COR, track = "#E4EAF0", txt = INK, sub = "#55606E"){
   const R = size*0.39, SW = size*0.11, c = size/2, C = 2*Math.PI*R;
   const frac = Math.max(0, Math.min(1, (score || 0)/100));
   return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" role="img" aria-label="бал ${score} зі 100">`
-    + `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="#E4EAF0" stroke-width="${SW}"/>`
-    + (frac ? `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="${COR}" stroke-width="${SW}"`
+    + `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="${track}" stroke-width="${SW}"/>`
+    + (frac ? `<circle cx="${c}" cy="${c}" r="${R}" fill="none" stroke="${arc}" stroke-width="${SW}"`
       + ` stroke-dasharray="${(C*frac).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 ${c} ${c})"/>` : "")
     + `<text x="${c}" y="${c + size*0.07}" text-anchor="middle" font-family="Inter Tight,Inter,sans-serif"`
-    + ` font-weight="800" font-size="${size*0.25}" fill="${score ? INK : COR_DEEP}">${score === null ? "—" : Math.round(score)}</text>`
+    + ` font-weight="800" font-size="${size*0.25}" fill="${score ? txt : COR_DEEP}">${score === null ? "—" : Math.round(score)}</text>`
     + `<text x="${c}" y="${c + size*0.21}" text-anchor="middle" font-family="ui-monospace,monospace"`
-    + ` font-size="${size*0.075}" fill="#55606E">зі 100</text></svg>`;
+    + ` font-size="${size*0.075}" fill="${sub}">зі 100</text></svg>`;
 }
 
 
@@ -604,14 +610,14 @@ function renderGeo(){
     return fact(`минулий замір`, `${p.score} → ${s.score} (${d > 0 ? "+" : ""}${d})`,
                 Math.abs(d) < 1 ? "" : d > 0 ? "f" : "c");
   };
-  const card = (title, s, extra, all, p) => `<div class="geo-card${all ? " all" : ""}"><div class="k">${title}</div>`
-    + donut(s.score, all ? 132 : 112) + `<div class="facts">`
+  const card = (title, s, extra, all, p, arc) => `<div class="geo-card${all ? " all" : ""}"><div class="k">${title}</div>`
+    + (all ? donut(s.score, 132, COR, "rgba(255,255,255,.16)", "#FFFFFF", "rgba(255,255,255,.7)") : donut(s.score, 112, arc)) + `<div class="facts">`
     + fact("вас назвали", `${s.hit} з ${s.of}`, s.hit ? "f" : "") + was(p, s)
     + fact("цитують сайт", `${s.cited} з ${s.of}`, s.cited ? "f" : "") + (extra || "") + `</div></div>`;
   document.getElementById("geoLangs").innerHTML =
     card("Разом", g.total, fact("брендові питання", `${g.branded.hit} з ${g.branded.of}`, g.branded.hit ? "f" : ""), true,
          g.prev && g.prev.total)
-    + g.langs.map(l => card(LANG[l] || l, g.byLang[l], "", false, g.prev && g.prev.byLang[l])).join("");
+    + g.langs.map((l, i) => card(LANG[l] || l, g.byLang[l], "", false, g.prev && g.prev.byLang[l], LANG_ARC[i % LANG_ARC.length])).join("");
 
   const place = r => g.rivals.findIndex(x => x.score === r.score) + 1;
   const tied = r => g.rivals.filter(x => x.score === r.score).length > 1;
